@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from autocraftofexile.models.recipe import RecipeData, RecipeMethod, RecipeSettings
+from autocraftofexile.models.recipe import RecipeData, RecipeSettings, RecipeStep
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RECIPE_EXAMPLE = PROJECT_ROOT / "data" / "recipe_example.json"
@@ -94,7 +94,7 @@ def test_parse_recipe_data() -> None:
 
 def test_parse_recipe_config() -> None:
     config = [
-        RecipeMethod.from_dict(entry)
+        RecipeStep.from_dict(entry)
         for entry in load_recipe_json()["config"]
     ]
 

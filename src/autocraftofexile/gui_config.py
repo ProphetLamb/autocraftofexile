@@ -38,24 +38,25 @@ def load_gui_config() -> GuiConfig:
         return GuiConfig.from_dict(data)
 
     except FileNotFoundError:
-        logging.info("begin GUI config prompt")
+        logging.debug("begin GUI config prompt")
         config = GuiConfig(
             showcase=prompt_coordinates("Item Showcase"),
             transmute=prompt_coordinates("Orb of Transmutation"),
             augment=prompt_coordinates("Orb of Augmentation"),
             alteration=prompt_coordinates("Orb of Alteration"),
             regal=prompt_coordinates("Regal Orb"),
-            exalt=prompt_coordinates("Exalted Orb"),
+            alchemy=prompt_coordinates("Alchemy Orb"),
             chaos=prompt_coordinates("Chaos Orb"),
+            exalt=prompt_coordinates("Exalted Orb"),
             scour=prompt_coordinates("Orb of Scouring"),
             annul=prompt_coordinates("Orb of Annulment"),
             start_hotkey=prompt_hotkey("start"),
             stop_hotkey=prompt_hotkey("stop"),
         )
 
-        logging.info("done GUI config prompt")
+        logging.debug("done GUI config prompt")
         with open(GUI_CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(asdict(config), f, indent=2)
 
-        logging.info("done GUI config file write")
+        logging.debug("done GUI config file write")
         return config

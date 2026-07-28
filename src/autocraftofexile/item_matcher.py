@@ -5,13 +5,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Iterable
 
-from autocraftofexile.models.item import Item, ItemModifier
-from autocraftofexile.models.poecd import PoeCd
-from autocraftofexile.models.recipe import (
+from .item_matcher import MatchContext
+from .models.item import Item, ItemModifier
+from .models.poecd import PoeCd
+from .models.recipe import (
     RecipeCondition,
     RecipeData,
     RecipeFilter,
-    RecipeMethod,
+    RecipeStep,
 )
 
 _NUMBER = r"[+-]?(?:\d+(?:\.\d+)?|\.\d+)"
@@ -23,8 +24,8 @@ RecipeConditions = set[RecipeCondition]
 
 @dataclass(slots=True, frozen=True)
 class ModifierMatchResult:
-    attributes: RecipeConditions = field(default_factory=set[RecipeCondition])
-    text: RecipeConditions = field(default_factory=set[RecipeCondition])
+    attributes: RecipeConditions = field(default_factory=RecipeConditions)
+    text: RecipeConditions = field(default_factory=RecipeConditions)
 
 
 @dataclass(slots=True)
@@ -33,7 +34,7 @@ class ItemMatchResult:
     modifiers: dict[ItemModifier, ModifierMatchResult] = field(
         default_factory=dict[ItemModifier, ModifierMatchResult]
     )
-    failed: RecipeConditions = field(default_factory=set[RecipeCondition])
+    failed: RecipeConditions = field(default_factory=RecipeConditions)
 
     def merge(self, other: ItemMatchResult) -> None:
         self.success = self.success and other.success
@@ -44,6 +45,13 @@ class ItemMatchResult:
             )
             modifier.attributes.update(other_modifier.attributes)
             modifier.text.update(other_modifier.text)
+
+    def negate(self) -> None:
+        self.success = not self.success
+        self.failed.clear()
+        for _, modifier in self.modifiers.items():
+            self.failed.update(modifier.attributes)
+            self.failed.update(modifier.text)
 
 
 def normalize_modifier_text(value: str) -> str:
@@ -186,7 +194,7 @@ class MatchContext:
         )
 
 
-class MatchRule(ABC):
+class Rule(ABC):
     @abstractmethod
     def supports(self, condition: RecipeCondition) -> bool:
         pass
@@ -234,7 +242,7 @@ class NamedRuleResult:
     )
 
 
-class NamedRule(MatchRule, ABC):
+class NamedRule(Rule, ABC):
     condition_id: str
 
     def supports(self, condition: RecipeCondition) -> bool:
@@ -262,31 +270,25 @@ class NamedRule(MatchRule, ABC):
         pass
 
 
-class OpenSlotRule(NamedRule):
-    slot: str | None = None
+class OpenAffixRule(NamedRule):
+    condition_id = "open_affix"
 
-    def match(
-        self, context: MatchContext
-    ) -> NamedRuleResult:
-        if self.slot == "prefix":
-            return NamedRuleResult(float(context.open_prefixes))
-        if self.slot == "suffix":
-            return NamedRuleResult(float(context.open_suffixes))
+    def match(self, context: MatchContext) -> NamedRuleResult:
         return NamedRuleResult(float(context.open_prefixes + context.open_suffixes))
 
 
-class OpenAffixRule(OpenSlotRule):
-    condition_id = "open_affix"
-
-
-class OpenPrefixRule(OpenSlotRule):
+class OpenPrefixRule(NamedRule):
     condition_id = "open_prefix"
-    slot = "prefix"
+
+    def match(self, context: MatchContext) -> NamedRuleResult:
+        return NamedRuleResult(float(context.open_prefixes))
 
 
-class OpenSuffixRule(OpenSlotRule):
+class OpenSuffixRule(NamedRule):
     condition_id = "open_suffix"
-    slot = "suffix"
+
+    def match(self, context: MatchContext) -> NamedRuleResult:
+        return NamedRuleResult(float(context.open_suffixes))
 
 
 class CountSlotRule(NamedRule):
@@ -317,7 +319,7 @@ class CountSuffixRule(CountSlotRule):
     slots = frozenset({"suffix"})
 
 
-class AttributeCountRule(NamedRule):
+class ModifierAttributeRule(NamedRule):
     attribute: str
     negate = False
 
@@ -333,32 +335,32 @@ class AttributeCountRule(NamedRule):
                 a.casefold() == expected for a in modifier.attributes)
             if (not contains) if self.negate else contains:
                 modifiers.add(modifier)
-        return NamedRuleResult(float(len(modifiers)), modifiers)
+        return NamedRuleResult(float(len(modifiers)), attributes=modifiers)
 
 
-class CountAttackRule(AttributeCountRule):
+class ModifierAttackRule(ModifierAttributeRule):
     condition_id = "count_attack"
     attribute = "Attack"
 
 
-class CountNonAttackRule(AttributeCountRule):
+class ModifierNonAttackRule(ModifierAttributeRule):
     condition_id = "count_nattack"
     attribute = "Attack"
     negate = True
 
 
-class CountCasterRule(AttributeCountRule):
+class ModifierCasterRule(ModifierAttributeRule):
     condition_id = "count_caster"
     attribute = "Caster"
 
 
-class CountNonCasterRule(AttributeCountRule):
+class ModifierNonCasterRule(ModifierAttributeRule):
     condition_id = "count_ncaster"
     attribute = "Caster"
     negate = True
 
 
-class InfluencedAffixRule(NamedRule):
+class InfluencedRule(NamedRule):
     slots: frozenset[str]
 
     def match(
@@ -378,33 +380,34 @@ class InfluencedAffixRule(NamedRule):
         return NamedRuleResult(float(len(modifiers)), text=modifiers)
 
 
-class CountInfluencedAffixRule(InfluencedAffixRule):
+class CountInfluencedAffixRule(InfluencedRule):
     condition_id = "count_iaffix"
     slots = frozenset({"prefix", "suffix"})
 
 
-class CountInfluencedPrefixRule(InfluencedAffixRule):
+class CountInfluencedPrefixRule(InfluencedRule):
     condition_id = "count_iprefix"
     slots = frozenset({"prefix"})
 
 
-class CountInfluencedSuffixRule(InfluencedAffixRule):
+class CountInfluencedSuffixRule(InfluencedRule):
     condition_id = "count_isuffix"
     slots = frozenset({"suffix"})
 
 
-class TemplateValueRule(NamedRule):
+class TemplateRule(NamedRule):
     affected: frozenset[str]
-    template_kind: str
+
+    @abstractmethod
+    @staticmethod
+    def templates(context: MatchContext) -> tuple[
+        tuple[re.Pattern[str], frozenset[str]], ...
+    ]:
+        pass
 
     def match(
         self, context: MatchContext
     ) -> NamedRuleResult:
-        templates = (
-            context.resistance_templates
-            if self.template_kind == "resistance"
-            else context.attribute_templates
-        )
         total = 0.0
         modifiers: set[ItemModifier] = set()
         for item_modifier, lines in zip(
@@ -413,7 +416,8 @@ class TemplateValueRule(NamedRule):
             strict=True,
         ):
             for line in lines:
-                contribution = self._line_contribution(line, templates)
+                contribution = self._line_contribution(
+                    line, self.templates(context))
                 if contribution is not None:
                     total += contribution
                     modifiers.add(item_modifier)
@@ -433,67 +437,69 @@ class TemplateValueRule(NamedRule):
         return None
 
 
-class FireResistanceRule(TemplateValueRule):
+class ResistanceRule(TemplateRule):
+    @staticmethod
+    def templates(context: MatchContext) -> tuple[tuple[re.Pattern[str], frozenset[str]], ...]:
+        return context.resistance_templates
+
+
+class AttributeRule(TemplateRule):
+    @staticmethod
+    def templates(context: MatchContext) -> tuple[tuple[re.Pattern[str], frozenset[str]], ...]:
+        return context.attribute_templates
+
+
+class FireResistanceRule(ResistanceRule):
     condition_id = "pseudo_fire_resist"
     affected = frozenset({"fire"})
-    template_kind = "resistance"
 
 
-class ColdResistanceRule(TemplateValueRule):
+class ColdResistanceRule(ResistanceRule):
     condition_id = "pseudo_cold_resist"
     affected = frozenset({"cold"})
-    template_kind = "resistance"
 
 
-class LightningResistanceRule(TemplateValueRule):
+class LightningResistanceRule(ResistanceRule):
     condition_id = "pseudo_lightning_resist"
     affected = frozenset({"lightning"})
-    template_kind = "resistance"
 
 
-class ChaosResistanceRule(TemplateValueRule):
+class ChaosResistanceRule(ResistanceRule):
     condition_id = "pseudo_chaos_resist"
     affected = frozenset({"chaos"})
-    template_kind = "resistance"
 
 
-class ElementalResistancesRule(TemplateValueRule):
+class ElementalResistancesRule(ResistanceRule):
     condition_id = "pseudo_elemental_resists"
     affected = frozenset({"fire", "cold", "lightning"})
-    template_kind = "resistance"
 
 
-class TotalResistancesRule(TemplateValueRule):
+class TotalResistancesRule(ResistanceRule):
     condition_id = "pseudo_total_resists"
     affected = frozenset({"fire", "cold", "lightning", "chaos"})
-    template_kind = "resistance"
 
 
-class AttributesRule(TemplateValueRule):
+class AttributesRule(AttributeRule):
     condition_id = "pseudo_attributes"
     affected = frozenset({"strength", "dexterity", "intelligence"})
-    template_kind = "attribute"
 
 
-class StrengthRule(TemplateValueRule):
+class StrengthRule(AttributeRule):
     condition_id = "pseudo_strength"
     affected = frozenset({"strength"})
-    template_kind = "attribute"
 
 
-class DexterityRule(TemplateValueRule):
+class DexterityRule(AttributeRule):
     condition_id = "pseudo_dexterity"
     affected = frozenset({"dexterity"})
-    template_kind = "attribute"
 
 
-class IntelligenceRule(TemplateValueRule):
+class IntelligenceRule(AttributeRule):
     condition_id = "pseudo_intelligence"
     affected = frozenset({"intelligence"})
-    template_kind = "attribute"
 
 
-class ModifierPresenceRule(MatchRule):
+class ModifierPresentRule(Rule):
     def supports(self, condition: RecipeCondition) -> bool:
         return condition.id.isdigit()
 
@@ -542,17 +548,17 @@ class ModifierPresenceRule(MatchRule):
         )
 
 
-DEFAULT_RULES: tuple[MatchRule, ...] = (
+DEFAULT_RULES: tuple[Rule, ...] = (
     OpenAffixRule(),
     OpenPrefixRule(),
     OpenSuffixRule(),
     CountAffixRule(),
     CountPrefixRule(),
     CountSuffixRule(),
-    CountAttackRule(),
-    CountNonAttackRule(),
-    CountCasterRule(),
-    CountNonCasterRule(),
+    ModifierAttackRule(),
+    ModifierNonAttackRule(),
+    ModifierCasterRule(),
+    ModifierNonCasterRule(),
     CountInfluencedAffixRule(),
     CountInfluencedPrefixRule(),
     CountInfluencedSuffixRule(),
@@ -566,14 +572,14 @@ DEFAULT_RULES: tuple[MatchRule, ...] = (
     StrengthRule(),
     DexterityRule(),
     IntelligenceRule(),
-    ModifierPresenceRule(),
+    ModifierPresentRule(),
 )
 
 
-class RecipeMethodMatcher:
+class ItemMatcher:
     def __init__(
-        self, method: RecipeMethod, recipe_data: RecipeData, poecd: PoeCd,
-        rules: Iterable[MatchRule] | None = None,
+        self, method: RecipeStep, recipe_data: RecipeData, poecd: PoeCd,
+        rules: Iterable[Rule] | None = None,
     ) -> None:
         self.method = method
         self.recipe_data = recipe_data
@@ -585,39 +591,47 @@ class RecipeMethodMatcher:
             return ItemMatchResult(True)
 
         context = MatchContext(item, self.recipe_data, self.poecd)
-        aggregate = ItemMatchResult(True)
-        filter_results: list[tuple[str, bool]] = []
-        for filter_ in self.method.filters:
-            filter_type = filter_.type.casefold()
-            if filter_type not in {"and", "or", "not"}:
+        result = ItemMatchResult(True)
+
+        for recipe_filter in self.method.filters:
+            rhs = self._evauate_filter(recipe_filter, context)
+            # boolean logic
+            operator = recipe_filter.type.casefold()
+            if operator == "and":
+                result.merge(rhs)
+            elif operator == "not":
+                rhs.negate()
+                result.merge(rhs)
+            elif operator == "or":
+                result.merge(rhs)
+                if result.success:
+                    return result
+                result = ItemMatchResult(True)
+            else:
                 raise ValueError(
-                    f"Unsupported recipe filter type: {filter_.type}")
-            condition_results: list[bool] = []
-            for condition in filter_.conds:
-                result = self._rule_for(condition).evaluate(
-                    condition, context, filter_
+                    f"Unsupported recipe filter type: {operator}"
                 )
-                condition_results.append(result.success)
-                aggregate.merge(result)
+        return result
 
-            passed = (
-                all(condition_results) if filter_type == "and"
-                else any(condition_results) if filter_type == "or"
-                else not any(condition_results)
+    def _evauate_filter(self, recipe_filter: RecipeFilter, context: MatchContext) -> ItemMatchResult:
+        result = ItemMatchResult(True)
+        passed = 0
+
+        for condition in recipe_filter.conds:
+            condition_result = self._rule_for(condition).evaluate(
+                condition,
+                context,
+                recipe_filter,
             )
-            filter_results.append((filter_type, passed))
+            passed += int(condition_result.success)
+            result.merge(condition_result)
 
-        and_results = [x for kind, x in filter_results if kind == "and"]
-        or_results = [x for kind, x in filter_results if kind == "or"]
-        not_results = [x for kind, x in filter_results if kind == "not"]
-        aggregate.success = (
-            all(and_results)
-            and (not or_results or any(or_results))
-            and all(not_results)
+        result.success = passed >= (
+            recipe_filter.treshold or len(recipe_filter.conds)
         )
-        return aggregate
+        return result
 
-    def _rule_for(self, condition: RecipeCondition) -> MatchRule:
+    def _rule_for(self, condition: RecipeCondition) -> Rule:
         for rule in self.rules:
             if rule.supports(condition):
                 return rule
@@ -625,9 +639,9 @@ class RecipeMethodMatcher:
 
 
 def evaluate_recipe_method(
-    method: RecipeMethod,
+    method: RecipeStep,
     recipe_data: RecipeData,
     poecd: PoeCd,
     item: Item,
 ) -> ItemMatchResult:
-    return RecipeMethodMatcher(method, recipe_data, poecd).evaluate(item)
+    return ItemMatcher(method, recipe_data, poecd).evaluate(item)

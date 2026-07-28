@@ -23,8 +23,9 @@ class GuiConfig:
     augment: Coordinates
     alteration: Coordinates
     regal: Coordinates
-    exalt: Coordinates
+    alchemy: Coordinates
     chaos: Coordinates
+    exalt: Coordinates
     scour: Coordinates
     annul: Coordinates
 
@@ -39,8 +40,9 @@ class GuiConfig:
             augment=Coordinates.from_dict(data["augment"]),
             alteration=Coordinates.from_dict(data["alteration"]),
             regal=Coordinates.from_dict(data["regal"]),
-            exalt=Coordinates.from_dict(data["exalt"]),
+            alchemy=Coordinates.from_dict(data["alchemy"]),
             chaos=Coordinates.from_dict(data["chaos"]),
+            exalt=Coordinates.from_dict(data["exalt"]),
             scour=Coordinates.from_dict(data["scour"]),
             annul=Coordinates.from_dict(data["annul"]),
             start_hotkey=data["start_hotkey"],

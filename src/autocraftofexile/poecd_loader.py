@@ -17,24 +17,24 @@ def load_poecd_data() -> PoeCd:
 
 
 def _parse_poecd_data(text: str) -> PoeCd:
-    logging.info("begin CraftOfExile data parse")
+    logging.debug("begin CraftOfExile data parse")
     text = text.removeprefix('poecd=')
     data = json.loads(text)
     result = PoeCd.from_dict(data)
-    logging.info("done CraftOfExile data parse")
+    logging.debug("done CraftOfExile data parse")
     return result
 
 
 def _download_poecd_content() -> str:
     try:
         with open(POECD_FILE, "r", encoding="utf-8") as f:
-            logging.info("begin CraftOfExile data file read")
+            logging.debug("begin CraftOfExile data file read")
             return f.read()
     except FileNotFoundError:
-        logging.info("begin CraftOfExile data download")
+        logging.debug("begin CraftOfExile data download")
         response = requests.get(POECD_URL, timeout=60)
         response.raise_for_status()
-        logging.info("done CraftOfExile data download")
+        logging.debug("done CraftOfExile data download")
         Path(POECD_FILE).write_bytes(response.content)
-        logging.info("done CraftOfExile data file write")
+        logging.debug("done CraftOfExile data file write")
         return response.content.decode()

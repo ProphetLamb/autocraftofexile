@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Self
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class AffixGroups:
     prefix: int
     suffix: int
@@ -17,7 +17,7 @@ class AffixGroups:
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class ItemAffix:
     atype: str
     id: str
@@ -48,7 +48,7 @@ class ItemAffix:
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class RecipeData:
     fmodpool: Any | None
     eldritch: Any | None
@@ -166,7 +166,7 @@ class RecipeCondition:
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class RecipeFilter:
     type: str
     treshold: int | None
@@ -186,7 +186,7 @@ class RecipeFilter:
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class RecipeActions:
     win: str
     win_route: str | None
@@ -211,8 +211,8 @@ class RecipeActions:
         )
 
 
-@dataclass(slots=True)
-class RecipeMethod:
+@dataclass(slots=True, frozen=True)
+class RecipeStep:
     method: list[str]
     mopts: Any | None
     autopass: bool
@@ -243,12 +243,12 @@ class RecipeMethod:
 class Recipe:
     settings: RecipeSettings
     data: RecipeData
-    config: list[RecipeMethod]
+    config: list[RecipeStep]
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         return cls(
             settings=RecipeSettings.from_dict(data["settings"]),
             data=RecipeData.from_dict(data["data"]),
-            config=[RecipeMethod.from_dict(x) for x in data["config"]]
+            config=[RecipeStep.from_dict(x) for x in data["config"]]
         )
