@@ -1,0 +1,293 @@
+{
+  "settings": {
+    "bgroup": 7,
+    "base": "21",
+    "bitem": "8114",
+    "ilvl": 85,
+    "rarity": "rare",
+    "influences": [
+      "3"
+    ],
+    "quality": 20,
+    "corrupted": 0,
+    "destroyed": 0,
+    "implicits": [
+      "{ Implicit Modifier }",
+      "+25% Chance to Block Spell Damage"
+    ],
+    "veils": [],
+    "socketed": [],
+    "sockets": 0
+  },
+  "data": {
+    "fmodpool": null,
+    "eldritch": null,
+    "dominance": null,
+    "mtypes": null,
+    "implicits": null,
+    "rollable_implicits": 0,
+    "cmodpool": null,
+    "hmodpool": null,
+    "maxaffgrp": {
+      "prefix": 3,
+      "suffix": 3
+    },
+    "is_rare": 1,
+    "is_fossil": 1,
+    "is_craftable": 1,
+    "is_influenced": 1,
+    "is_essence": 1,
+    "is_catalyst": 0,
+    "is_notable": 0,
+    "unique_notable": 0,
+    "iaffixes": [
+      {
+        "atype": "prefix",
+        "id": "611",
+        "mgrp": "3",
+        "modgroups": [
+          "PoisonDamage"
+        ],
+        "weight": "500",
+        "nvalues": "[[37,42]]",
+        "tindex": 0,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          37
+        ]
+      },
+      {
+        "atype": "suffix",
+        "id": "710",
+        "mgrp": "3",
+        "modgroups": [
+          "CriticalStrikeChanceIncrease"
+        ],
+        "weight": "500",
+        "nvalues": "[[22,25],50]",
+        "tindex": 0,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          25,
+          50
+        ]
+      },
+      {
+        "atype": "prefix",
+        "id": "1993",
+        "mgrp": "1",
+        "modgroups": [
+          "IncreaseSpecificSocketedGemLevel"
+        ],
+        "weight": "500",
+        "nvalues": "[1]",
+        "tindex": 0,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          1
+        ]
+      },
+      {
+        "atype": "suffix",
+        "id": "2305",
+        "mgrp": "1",
+        "modgroups": [
+          "SpellCriticalStrikeChanceIncrease"
+        ],
+        "weight": "1000",
+        "nvalues": "[[90,104]]",
+        "tindex": 2,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          95
+        ]
+      },
+      {
+        "atype": "suffix",
+        "id": "2336",
+        "mgrp": "1",
+        "modgroups": [
+          "Strength"
+        ],
+        "weight": "500",
+        "nvalues": "[[18,22]]",
+        "tindex": 2,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          19
+        ]
+      }
+    ],
+    "meta_flags": {},
+    "imprint": null,
+    "enchant": "",
+    "iaffbt": {
+      "prefix": 2,
+      "suffix": 3
+    },
+    "cmaxaffgrp": {
+      "prefix": 3,
+      "suffix": 3
+    },
+    "mgrpdata": null,
+    "affbymgrp": null,
+    "veiledmods": null
+  },
+  "config": [
+    {
+      "method": [
+        "currency",
+        "scour"
+      ],
+      "mopts": null,
+      "autopass": true,
+      "filters": null,
+      "vfilter": null,
+      "actions": {
+        "win": "next",
+        "win_route": null,
+        "fail": "loop",
+        "fail_route": null
+      }
+    },
+    {
+      "method": [
+        "currency",
+        "transmute"
+      ],
+      "mopts": null,
+      "autopass": true,
+      "filters": null,
+      "vfilter": null,
+      "actions": {
+        "win": "next",
+        "win_route": null,
+        "fail": "loop",
+        "fail_route": null
+      }
+    },
+    {
+      "method": [
+        "currency",
+        "alteration"
+      ],
+      "mopts": null,
+      "autopass": true,
+      "filters": null,
+      "vfilter": null,
+      "actions": {
+        "win": "next",
+        "win_route": null,
+        "fail": "loop",
+        "fail_route": null
+      }
+    },
+    {
+      "method": [
+        "check"
+      ],
+      "mopts": null,
+      "autopass": false,
+      "filters": [
+        {
+          "type": "and",
+          "treshold": null,
+          "conds": [
+            {
+              "id": "open_affix",
+              "treshold": 1,
+              "max": null,
+              "base": null
+            }
+          ]
+        }
+      ],
+      "vfilter": [],
+      "actions": {
+        "win": "next",
+        "win_route": null,
+        "fail": "step",
+        "fail_route": "3"
+      }
+    },
+    {
+      "method": [
+        "currency",
+        "augmentation",
+        "augmentation_normal"
+      ],
+      "mopts": null,
+      "autopass": false,
+      "filters": [
+        {
+          "type": "and",
+          "treshold": null,
+          "conds": [
+            {
+              "id": "2354",
+              "treshold": 1,
+              "max": null,
+              "base": null
+            }
+          ]
+        },
+        {
+          "type": "or",
+          "treshold": null,
+          "conds": [
+            {
+              "id": "2318",
+              "treshold": 1,
+              "max": null,
+              "base": null
+            }
+          ]
+        }
+      ],
+      "vfilter": [],
+      "actions": {
+        "win": "next",
+        "win_route": null,
+        "fail": "step",
+        "fail_route": "3"
+      }
+    }
+  ],
+  "flow": null,
+  "states": {
+    "init": {
+      "rarity": "rare",
+      "dominance": null,
+      "influences": [
+        "3"
+      ],
+      "meta": null
+    },
+    "current": {
+      "rarity": null,
+      "dominance": null,
+      "influences": null,
+      "meta": null
+    },
+    "states": [
+      {
+        "rarity": "rare",
+        "dominance": null,
+        "influences": [
+          "3"
+        ],
+        "meta": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+__pycache__/
+.pytest_cache/
+/data/poecd_data.json
+/data/recipe.json
