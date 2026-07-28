@@ -19,22 +19,6 @@ _NUMBER_PATTERN = rf"{_NUMBER}(?:\({_NUMBER}-{_NUMBER}\))?"
 _SPACE_PATTERN = r"\s+"
 
 
-@dataclass(slots=True)
-class ItemMatchResult:
-    success: bool
-    modifiers: list[ItemModifierMatchResult]
-    failed: RecipeConditions
-
-
-RecipeConditions = list[RecipeCondition]
-
-
-@dataclass(slots=True)
-class ItemModifierMatchResult:
-    attributes: list[RecipeConditions]
-    text: list[RecipeConditions]
-
-
 def normalize_modifier_text(value: str) -> str:
     """Normalize whitespace and common PoE punctuation before matching."""
     return " ".join(value.replace("\u2013", "-").replace("\u2014", "-").split())
@@ -69,19 +53,71 @@ def modifier_template_pattern(template: str) -> re.Pattern[str]:
     return re.compile("".join(pattern), re.IGNORECASE)
 
 
+RecipeConditions = list[RecipeCondition]
+
+
+@dataclass(slots=True)
+class ItemModifierMatchResult:
+    attributes: list[RecipeCondition] = field(
+        default_factory=list[RecipeCondition]
+    )
+    text: list[RecipeCondition] = field(
+        default_factory=list[RecipeCondition]
+    )
+
+
+@dataclass(slots=True)
+class ItemMatchResult:
+    success: bool
+    modifiers: list[ItemModifierMatchResult]
+    failed: RecipeConditions
+
+
+@dataclass(slots=True)
+class ConditionMatchResult:
+    success: bool
+    attributes: set[int] = field(default_factory=set[int])
+    text: set[int] = field(default_factory=set[int])
+
+
 class ConditionRule(ABC):
     @abstractmethod
     def supports(self, condition: RecipeCondition) -> bool:
         pass
 
-    @abstractmethod
     def evaluate(
+        self,
+        condition: RecipeCondition,
+        context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> ConditionMatchResult:
+        success = self._is_match(condition, context, filter_)
+        if not success:
+            return ConditionMatchResult(False)
+
+        attributes, text = self._matching_modifier_indices(
+            condition,
+            context,
+            filter_,
+        )
+        return ConditionMatchResult(True, attributes, text)
+
+    @abstractmethod
+    def _is_match(
         self,
         condition: RecipeCondition,
         context: MatchContext,
         filter_: RecipeFilter,
     ) -> bool:
         pass
+
+    def _matching_modifier_indices(
+        self,
+        condition: RecipeCondition,
+        context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        return set(), set()
 
 
 @dataclass(frozen=True, slots=True)
@@ -241,7 +277,7 @@ class PseudoConditionRule(ConditionRule, ABC):
     def supports(self, condition: RecipeCondition) -> bool:
         return condition.id == self.condition_id
 
-    def evaluate(
+    def _is_match(
         self,
         condition: RecipeCondition,
         context: MatchContext,
@@ -282,6 +318,16 @@ class CountAffixRule(PseudoConditionRule):
     def value(self, context: MatchContext) -> int:
         return context.prefix_count + context.suffix_count
 
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        del condition, filter_
+        return {
+            index for index, modifier in enumerate(context.item.modifiers)
+            if modifier.slot.casefold() in {"prefix", "suffix"}
+        }, set()
+
 
 class CountPrefixRule(PseudoConditionRule):
     condition_id = "count_prefix"
@@ -289,12 +335,32 @@ class CountPrefixRule(PseudoConditionRule):
     def value(self, context: MatchContext) -> int:
         return context.prefix_count
 
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        del condition, filter_
+        return {
+            index for index, modifier in enumerate(context.item.modifiers)
+            if modifier.slot.casefold() == "prefix"
+        }, set()
+
 
 class CountSuffixRule(PseudoConditionRule):
     condition_id = "count_suffix"
 
     def value(self, context: MatchContext) -> int:
         return context.suffix_count
+
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        del condition, filter_
+        return {
+            index for index, modifier in enumerate(context.item.modifiers)
+            if modifier.slot.casefold() == "suffix"
+        }, set()
 
 
 class AttributeCountRule(PseudoConditionRule, ABC):
@@ -315,6 +381,18 @@ class AttributeCountRule(PseudoConditionRule, ABC):
         contains = any(attribute.casefold() ==
                        expected for attribute in attributes)
         return not contains if self.negate else contains
+
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        del condition, filter_
+        expected = self.attribute.casefold()
+        return {
+            index for index, modifier in enumerate(context.item.modifiers)
+            if modifier.slot.casefold() in {"prefix", "suffix"}
+            and self._matches(modifier.attributes, expected)
+        }, set()
 
 
 class CountAttackRule(AttributeCountRule):
@@ -369,6 +447,17 @@ class InfluencedAffixRule(PseudoConditionRule, ABC):
             for influence_name in influence_names
         )
 
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        del condition, filter_
+        return {
+            index for index, modifier in enumerate(context.item.modifiers)
+            if modifier.slot.casefold() in self.slots
+            and self._has_influence_name(modifier.name, context.influence_names)
+        }, set()
+
 
 class CountInfluencedAffixRule(InfluencedAffixRule):
     condition_id = "count_iaffix"
@@ -399,7 +488,7 @@ class ResistanceRule(ConditionRule, ABC):
     def supports(self, condition: RecipeCondition) -> bool:
         return condition.id == self.condition_id
 
-    def evaluate(
+    def _is_match(
         self,
         condition: RecipeCondition,
         context: MatchContext,
@@ -422,6 +511,22 @@ class ResistanceRule(ConditionRule, ABC):
                     total += contribution
 
         return total
+
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        del condition, filter_
+        matched = {
+            index
+            for index, lines in enumerate(context.normalized_modifier_text)
+            if any(
+                self._line_contribution(line, context.resistance_templates)
+                is not None
+                for line in lines
+            )
+        }
+        return set(), matched
 
     def _line_contribution(
         self,
@@ -488,7 +593,7 @@ class AttributeValueRule(ConditionRule, ABC):
     def supports(self, condition: RecipeCondition) -> bool:
         return condition.id == self.condition_id
 
-    def evaluate(
+    def _is_match(
         self,
         condition: RecipeCondition,
         context: MatchContext,
@@ -510,6 +615,22 @@ class AttributeValueRule(ConditionRule, ABC):
                     total += contribution
 
         return total
+
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        del condition, filter_
+        matched = {
+            index
+            for index, lines in enumerate(context.normalized_modifier_text)
+            if any(
+                self._line_contribution(line, context.attribute_templates)
+                is not None
+                for line in lines
+            )
+        }
+        return set(), matched
 
     def _line_contribution(
         self,
@@ -566,7 +687,7 @@ class ModifierPresenceRule(ConditionRule):
     def supports(self, condition: RecipeCondition) -> bool:
         return condition.id.isdigit()
 
-    def evaluate(
+    def _is_match(
         self,
         condition: RecipeCondition,
         context: MatchContext,
@@ -590,6 +711,30 @@ class ModifierPresenceRule(ConditionRule):
             )
             for index, item_modifier in enumerate(context.item.modifiers)
         )
+
+    def _matching_modifier_indices(
+        self, condition: RecipeCondition, context: MatchContext,
+        filter_: RecipeFilter,
+    ) -> tuple[set[int], set[int]]:
+        poecd_modifier = context.poecd.modifiers.get(condition.id)
+        if poecd_modifier is None:
+            return set(), set()
+        patterns = [
+            modifier_template_pattern(template.strip())
+            for template in poecd_modifier.name_modifier.split(",")
+            if template.strip()
+        ]
+        matched = {
+            index
+            for index, modifier in enumerate(context.item.modifiers)
+            if self._tier_matches(modifier.tier, filter_)
+            and self._matches(
+                patterns,
+                context.normalized_modifier_text[index],
+                condition,
+            )
+        }
+        return set(), matched
 
     @staticmethod
     def _tier_matches(item_tier: int, filter_: RecipeFilter) -> bool:
@@ -683,64 +828,76 @@ class RecipeMethodMatcher:
             )
         )
 
-    def evaluate(self, item: Item) -> bool:
-        # Craft methods with no filters pass automatically. A check method with
-        # an explicitly empty filter list also has no conditions to reject it.
+    def evaluate(self, item: Item) -> ItemMatchResult:
+        modifier_results = [
+            ItemModifierMatchResult() for _ in item.modifiers
+        ]
+        failed: RecipeConditions = []
+
         if not self.method.filters:
-            return True
+            return ItemMatchResult(True, modifier_results, failed)
 
         context = MatchContext(item, self.context_data, self.poecd)
-        and_filters = [
-            f for f in self.method.filters if f.type.casefold() == "and"]
-        or_filters = [
-            f for f in self.method.filters if f.type.casefold() == "or"]
-        not_filters = [
-            f for f in self.method.filters if f.type.casefold() == "not"]
-        unknown = [
-            f for f in self.method.filters
-            if f.type.casefold() not in {"and", "or", "not"}
-        ]
-        if unknown:
-            names = ", ".join(sorted({f.type for f in unknown}))
-            raise ValueError(f"Unsupported recipe filter type(s): {names}")
+        filter_results: list[tuple[str, bool]] = []
 
-        # All AND groups must pass. If OR groups exist, at least one must pass.
-        # Every NOT group must have none of its conditions succeed.
-        return (
-            all(self._evaluate_filter(f, context) for f in and_filters)
-            and (
-                not or_filters
-                or any(self._evaluate_filter(f, context) for f in or_filters)
-            )
-            and all(self._evaluate_filter(f, context) for f in not_filters)
+        for filter_ in self.method.filters:
+            filter_type = filter_.type.casefold()
+            if filter_type not in {"and", "or", "not"}:
+                raise ValueError(
+                    f"Unsupported recipe filter type: {filter_.type}")
+
+            condition_results: list[bool] = []
+            for condition in filter_.conds:
+                rule = self._rule_for(condition)
+                result = rule.evaluate(condition, context, filter_)
+                condition_results.append(result.success)
+
+                if not result.success:
+                    failed.append(condition)
+                    continue
+
+                for index in result.attributes:
+                    self._append_unique(
+                        modifier_results[index].attributes, condition
+                    )
+                for index in result.text:
+                    self._append_unique(
+                        modifier_results[index].text, condition)
+
+            if filter_type == "and":
+                passed = all(condition_results)
+            elif filter_type == "or":
+                passed = any(condition_results)
+            else:
+                passed = not any(condition_results)
+
+            filter_results.append((filter_type, passed))
+
+        and_results = [passed for type_,
+                       passed in filter_results if type_ == "and"]
+        or_results = [passed for type_,
+                      passed in filter_results if type_ == "or"]
+        not_results = [passed for type_,
+                       passed in filter_results if type_ == "not"]
+        success = (
+            all(and_results)
+            and (not or_results or any(or_results))
+            and all(not_results)
         )
+        return ItemMatchResult(success, modifier_results, failed)
 
-    def _evaluate_filter(
-        self,
-        filter_: RecipeFilter,
-        context: MatchContext,
-    ) -> bool:
-        results = [
-            self._evaluate_condition(condition, context, filter_)
-            for condition in filter_.conds
-        ]
-        if filter_.type.casefold() == "and":
-            return all(results)
-        if filter_.type.casefold() == "or":
-            return any(results)
-        if filter_.type.casefold() == "not":
-            return not any(results)
-        raise ValueError(f"Unsupported recipe filter type: {filter_.type}")
-
-    def _evaluate_condition(
-        self,
+    @staticmethod
+    def _append_unique(
+        conditions: RecipeConditions,
         condition: RecipeCondition,
-        context: MatchContext,
-        filter_: RecipeFilter,
-    ) -> bool:
+    ) -> None:
+        if condition not in conditions:
+            conditions.append(condition)
+
+    def _rule_for(self, condition: RecipeCondition) -> ConditionRule:
         for rule in self.rules:
             if rule.supports(condition):
-                return rule.evaluate(condition, context, filter_)
+                return rule
         raise ValueError(f"No condition rule handles {condition.id!r}")
 
 
@@ -749,6 +906,6 @@ def evaluate_recipe_method(
     recipe_data: RecipeData,
     poecd: PoeCd,
     item: Item,
-) -> bool:
+) -> ItemMatchResult:
     """Convenience function for one-off method evaluation."""
     return RecipeMethodMatcher(method, recipe_data, poecd).evaluate(item)
