@@ -2,3 +2,4 @@ __pycache__/
 .pytest_cache/
 /data/poecd_data.json
 /data/recipe.json
+/.vscode/PythonImportHelper-v2-Completion.json
