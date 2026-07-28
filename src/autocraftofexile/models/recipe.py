@@ -145,7 +145,7 @@ class RecipeSettings:
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class RecipeCondition:
     id: str
     treshold: int | None

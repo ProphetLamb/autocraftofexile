@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class ItemIdentifier:
     item_class: str  # Staves
     rarity: str  # Rare
@@ -9,7 +9,7 @@ class ItemIdentifier:
     base_item: str  # Lathi
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class ItemRequirements:
     level: int  # 62
     str: int  # 113
@@ -17,12 +17,12 @@ class ItemRequirements:
     int: int  # 113
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class SocketLinks:
     sockets: list[str]
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class ItemModifier:
     name: str  # The Elder's
     slot: str  # Implicit, Prefix, Suffix
@@ -31,7 +31,7 @@ class ItemModifier:
     text: list[str]  # % increased Spell Damage per 10 Strength
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Item:
     ident: ItemIdentifier
     base: str  # Staff
