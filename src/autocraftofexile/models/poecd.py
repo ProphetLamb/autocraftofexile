@@ -2,20 +2,21 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any, Generic, Self, TypeVar
 
 T = TypeVar("T")
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class SparseArray(Generic[T]):
     """A sparse array contains items in ``seq`` and their index in ``ind``.
 
     Accessing ``array[key]`` resolves to ``array.seq[array.ind[key]]``.
     """
 
-    seq: list[T]
-    ind: dict[str, int]
+    seq: tuple[T]
+    ind: Mapping[str, int]
 
     @classmethod
     def from_dict(
@@ -24,8 +25,9 @@ class SparseArray(Generic[T]):
         item_factory: Callable[[Mapping[str, Any]], T],
     ) -> Self:
         return cls(
-            seq=[item_factory(item) for item in data["seq"]],
-            ind={str(key): int(index) for key, index in data["ind"].items()},
+            seq=tuple[T](item_factory(item) for item in data["seq"]),
+            ind=MappingProxyType({str(key): int(index)
+                                 for key, index in data["ind"].items()}),
         )
 
     def __getitem__(self, key: str) -> T:
@@ -56,7 +58,7 @@ class SparseArray(Generic[T]):
             yield key, self.seq[index]
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class BItem:
     id_bitem: str
     id_base: str
@@ -76,16 +78,16 @@ class BItem:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class BItems:
     values: SparseArray[BItem]
-    name: dict[str, int]
+    name: Mapping[str, int]
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             values=SparseArray[BItem].from_dict(data, BItem.from_dict),
-            name=data["name"],
+            name=MappingProxyType(data["name"]),
         )
 
     def __getitem__(self, key: str) -> BItem:
@@ -95,7 +97,7 @@ class BItems:
         return self.values.seq[self.name[name]]
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Base:
     id_bgroup: str
     id_base: str
@@ -113,26 +115,26 @@ class Base:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Bases:
     values: SparseArray[Base]
-    items: dict[str, list[int]]
+    items: Mapping[str, tuple[int, ...]]
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             values=SparseArray[Base].from_dict(data, Base.from_dict),
-            items={
-                str(base_id): [int(index) for index in indices]
+            items=MappingProxyType({
+                str(base_id): tuple(int(index) for index in indices)
                 for base_id, indices in data["items"].items()
-            },
+            }),
         )
 
     def __getitem__(self, key: str) -> Base:
         return self.values[key]
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class BGroup:
     id_bgroup: str
     name_bgroup: str
@@ -152,7 +154,7 @@ class BGroup:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Modifier:
     id_modifier: str
     modgroup: str | None
@@ -180,7 +182,7 @@ class Modifier:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class MGroup:
     is_influence: str
     id_mgroup: str
@@ -196,7 +198,7 @@ class MGroup:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class MType:
     id_mtype: str
     poedb_id: str
@@ -211,7 +213,7 @@ class MType:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class AliasModifier:
     mgroup: str
     modid: str
@@ -222,36 +224,36 @@ class AliasModifier:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Aliases:
     """Aliases indexed by base ID, affix type, and displayed modifier name."""
 
-    values: dict[str, dict[str, dict[str, list[AliasModifier]]]]
+    values: Mapping[str, Mapping[str, Mapping[str, tuple[AliasModifier, ...]]]]
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            values={
-                str(base_id): {
-                    str(affix): {
-                        str(modifier_name): [
+            values=MappingProxyType({
+                str(base_id): MappingProxyType({
+                    str(affix): MappingProxyType({
+                        str(modifier_name): tuple(
                             AliasModifier.from_dict(entry) for entry in entries
-                        ]
+                        )
                         for modifier_name, entries in modifiers.items()
-                    }
+                    })
                     for affix, modifiers in affixes.items()
-                }
+                })
                 for base_id, affixes in data.items()
-            }
+            })
         )
 
     def __getitem__(
         self, base_id: str
-    ) -> dict[str, dict[str, list[AliasModifier]]]:
+    ) -> Mapping[str, Mapping[str, tuple[AliasModifier, ...]]]:
         return self.values[base_id]
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class ModifierTier:
     ilvl: str
     weighting: str
@@ -264,29 +266,29 @@ class ModifierTier:
         return cls(**data)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Tiers:
     """Tiers indexed by modifier ID and then base/group ID."""
 
-    values: dict[str, dict[str, list[ModifierTier]]]
+    values: Mapping[str, Mapping[str, tuple[ModifierTier, ...]]]
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            values={
-                str(modifier_id): {
-                    str(group_id): [ModifierTier.from_dict(tier) for tier in tiers]
+            values=MappingProxyType({
+                str(modifier_id): MappingProxyType({
+                    str(group_id): tuple(ModifierTier.from_dict(tier) for tier in tiers)
                     for group_id, tiers in groups.items()
-                }
+                })
                 for modifier_id, groups in data.items()
-            }
+            })
         )
 
-    def __getitem__(self, modifier_id: str) -> dict[str, list[ModifierTier]]:
+    def __getitem__(self, modifier_id: str) -> Mapping[str, tuple[ModifierTier, ...]]:
         return self.values[modifier_id]
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class PoeCd:
     bitems: BItems
     bases: Bases

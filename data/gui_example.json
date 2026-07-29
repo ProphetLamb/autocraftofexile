@@ -1,0 +1,44 @@
+{
+  "showcase": {
+    "x": 966,
+    "y": 238
+  },
+  "transmute": {
+    "x": 1623,
+    "y": 396
+  },
+  "augment": {
+    "x": 716,
+    "y": 362
+  },
+  "alteration": {
+    "x": 1586,
+    "y": 306
+  },
+  "regal": {
+    "x": 771,
+    "y": 606
+  },
+  "alchemy": {
+    "x": 1215,
+    "y": 413
+  },
+  "chaos": {
+    "x": 1493,
+    "y": 376
+  },
+  "exalt": {
+    "x": 570,
+    "y": 343
+  },
+  "scour": {
+    "x": 931,
+    "y": 370
+  },
+  "annul": {
+    "x": 1512,
+    "y": 371
+  },
+  "start_hotkey": "ctrl+i",
+  "stop_hotkey": "ctrl+o"
+}

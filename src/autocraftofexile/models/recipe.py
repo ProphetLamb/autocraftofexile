@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Self
+from types import MappingProxyType
+from typing import Any, Mapping, Self
 
 
 @dataclass(slots=True, frozen=True)
@@ -10,7 +11,7 @@ class AffixGroups:
     suffix: int
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             prefix=int(data["prefix"]),
             suffix=int(data["suffix"]),
@@ -22,29 +23,29 @@ class ItemAffix:
     atype: str
     id: str
     mgrp: str
-    modgroups: list[str]
+    modgroups: tuple[str, ...]
     weight: str
     nvalues: str
     tindex: int
     frac: int
     maven: int
     bench: int
-    rolls: list[int]
+    rolls: tuple[int, ...]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             atype=str(data["atype"]),
             id=str(data["id"]),
             mgrp=str(data["mgrp"]),
-            modgroups=[str(value) for value in data["modgroups"]],
+            modgroups=tuple(str(value) for value in data["modgroups"]),
             weight=str(data["weight"]),
             nvalues=str(data["nvalues"]),
             tindex=int(data["tindex"]),
             frac=int(data["frac"]),
             maven=int(data["maven"]),
             bench=int(data["bench"]),
-            rolls=[int(value) for value in data["rolls"]],
+            rolls=tuple(int(value) for value in data["rolls"]),
         )
 
 
@@ -67,8 +68,8 @@ class RecipeData:
     is_catalyst: int
     is_notable: int
     unique_notable: int
-    iaffixes: list[ItemAffix]
-    meta_flags: dict[str, Any]
+    iaffixes: tuple[ItemAffix, ...]
+    meta_flags: Mapping[str, Any]
     imprint: Any | None
     enchant: str
     iaffbt: AffixGroups
@@ -78,7 +79,7 @@ class RecipeData:
     veiledmods: Any | None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             fmodpool=data.get("fmodpool"),
             eldritch=data.get("eldritch"),
@@ -97,9 +98,9 @@ class RecipeData:
             is_catalyst=int(data["is_catalyst"]),
             is_notable=int(data["is_notable"]),
             unique_notable=int(data["unique_notable"]),
-            iaffixes=[ItemAffix.from_dict(value)
-                      for value in data["iaffixes"]],
-            meta_flags=dict(data["meta_flags"]),
+            iaffixes=tuple(ItemAffix.from_dict(value)
+                           for value in data["iaffixes"]),
+            meta_flags=MappingProxyType(data["meta_flags"]),
             imprint=data.get("imprint"),
             enchant=str(data["enchant"]),
             iaffbt=AffixGroups.from_dict(data["iaffbt"]),
@@ -110,37 +111,37 @@ class RecipeData:
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class RecipeSettings:
     bgroup: int
     base: str
     bitem: str
     ilvl: int
     rarity: str
-    influences: list[str]
+    influences: tuple[str, ...]
     quality: int
     corrupted: int
     destroyed: int
-    implicits: list[str]
-    veils: list[Any]
-    socketed: list[Any]
+    implicits: tuple[str, ...]
+    veils: tuple[Any, ...]
+    socketed: tuple[Any, ...]
     sockets: int
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             bgroup=int(data["bgroup"]),
             base=str(data["base"]),
             bitem=str(data["bitem"]),
             ilvl=int(data["ilvl"]),
             rarity=str(data["rarity"]),
-            influences=[str(value) for value in data["influences"]],
+            influences=tuple(str(value) for value in data["influences"]),
             quality=int(data["quality"]),
             corrupted=int(data["corrupted"]),
             destroyed=int(data["destroyed"]),
-            implicits=[str(value) for value in data["implicits"]],
-            veils=list(data["veils"]),
-            socketed=list(data["socketed"]),
+            implicits=tuple(str(value) for value in data["implicits"]),
+            veils=tuple(x for x in data["veils"]),
+            socketed=tuple(x for x in data["socketed"]),
             sockets=int(data["sockets"]),
         )
 
@@ -153,7 +154,7 @@ class RecipeCondition:
     base: Any | None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             id=str(data["id"]),
             treshold=(
@@ -170,10 +171,10 @@ class RecipeCondition:
 class RecipeFilter:
     type: str
     treshold: int | None
-    conds: list[RecipeCondition]
+    conds: tuple[RecipeCondition, ...]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             type=str(data["type"]),
             treshold=(
@@ -181,8 +182,8 @@ class RecipeFilter:
                 if data.get("treshold") is not None
                 else None
             ),
-            conds=[RecipeCondition.from_dict(value)
-                   for value in data["conds"]],
+            conds=tuple(RecipeCondition.from_dict(value)
+                        for value in data["conds"]),
         )
 
 
@@ -194,7 +195,7 @@ class RecipeActions:
     fail_route: str | None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             win=str(data["win"]),
             win_route=(
@@ -213,42 +214,42 @@ class RecipeActions:
 
 @dataclass(slots=True, frozen=True)
 class RecipeStep:
-    method: list[str]
+    method: tuple[str, ...]
     mopts: Any | None
     autopass: bool
-    filters: list[RecipeFilter] | None
-    vfilter: list[Any] | None
+    filters: tuple[RecipeFilter, ...] | None
+    vfilter: tuple[Any, ...] | None
     actions: RecipeActions
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         filters_data = data.get("filters")
         vfilter_data = data.get("vfilter")
 
         return cls(
-            method=[str(value) for value in data["method"]],
+            method=tuple(str(value) for value in data["method"]),
             mopts=data.get("mopts"),
             autopass=bool(data["autopass"]),
             filters=(
-                [RecipeFilter.from_dict(value) for value in filters_data]
+                tuple(RecipeFilter.from_dict(value) for value in filters_data)
                 if filters_data is not None
                 else None
             ),
-            vfilter=list(vfilter_data) if vfilter_data is not None else None,
+            vfilter=tuple(vfilter_data) if vfilter_data is not None else None,
             actions=RecipeActions.from_dict(data["actions"]),
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Recipe:
     settings: RecipeSettings
     data: RecipeData
-    config: list[RecipeStep]
+    config: tuple[RecipeStep, ...]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             settings=RecipeSettings.from_dict(data["settings"]),
             data=RecipeData.from_dict(data["data"]),
-            config=[RecipeStep.from_dict(x) for x in data["config"]]
+            config=tuple(RecipeStep.from_dict(x) for x in data["config"])
         )

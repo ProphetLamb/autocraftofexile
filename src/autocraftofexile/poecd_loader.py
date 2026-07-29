@@ -1,17 +1,17 @@
 import json
 import logging
+from os import PathLike
 from pathlib import Path
 
 import requests
 
+from autocraftofexile import POECD_FILE, POECD_URL
+
 from .models.poecd import PoeCd
 
-POECD_URL = "https://www.craftofexile.com/json/data/main/poec_data.json"
-POECD_FILE = "data/poecd_data.json"
 
-
-def load_poecd_data() -> PoeCd:
-    text = _download_poecd_content()
+def load_poecd_data(file: PathLike[str] | str | None = None) -> PoeCd:
+    text = _download_poecd_content(Path(file) if file else POECD_FILE)
     data = _parse_poecd_data(text)
     return data
 
@@ -25,9 +25,9 @@ def _parse_poecd_data(text: str) -> PoeCd:
     return result
 
 
-def _download_poecd_content() -> str:
+def _download_poecd_content(file: Path) -> str:
     try:
-        with open(POECD_FILE, "r", encoding="utf-8") as f:
+        with open(file, "r", encoding="utf-8") as f:
             logging.debug("begin CraftOfExile data file read")
             return f.read()
     except FileNotFoundError:
@@ -35,6 +35,6 @@ def _download_poecd_content() -> str:
         response = requests.get(POECD_URL, timeout=60)
         response.raise_for_status()
         logging.debug("done CraftOfExile data download")
-        Path(POECD_FILE).write_bytes(response.content)
+        file.write_bytes(response.content)
         logging.debug("done CraftOfExile data file write")
         return response.content.decode()

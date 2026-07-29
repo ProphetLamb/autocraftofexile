@@ -1,15 +1,16 @@
 import json
 import logging
+from os import PathLike
+
+from autocraftofexile import RECIPE_FILE
 
 from .models.recipe import Recipe
 
-RECIPE_FILE = "data/recipe.json"
 
-
-def load_recipe() -> Recipe:
+def load_recipe(file: PathLike[str] | str | None = None) -> Recipe:
     data = None
     logging.debug("begin Recipe data file read")
-    with open(RECIPE_FILE, "r", encoding="utf-8") as f:
+    with open(file or RECIPE_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     logging.debug("done Recipe data file read")

@@ -1,19 +1,19 @@
 import json
 import logging
 from dataclasses import asdict
+from os import PathLike
 
 import keyboard
 import pyautogui
 
-from .models.gui_config import Coordinates, GuiConfig
+from autocraftofexile import GUI_CONFIG_FILE
 
-GUI_CONFIG_FILE = "data/gui.json"
+from .models.gui_config import Coordinates, GuiConfig
 
 
 def prompt_coordinates(name: str) -> Coordinates:
     print()
     print(f"Move mouse to the {name} and press ENTER.")
-    input()
 
     x, y = pyautogui.position()
     print(f"{name}: {x}, {y}")
@@ -29,10 +29,11 @@ def prompt_hotkey(name: str) -> str:
     return hotkey
 
 
-def load_gui_config() -> GuiConfig:
+def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
+    file = file or GUI_CONFIG_FILE
     try:
         data = None
-        with open(GUI_CONFIG_FILE, "r", encoding="utf-8") as f:
+        with open(file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         return GuiConfig.from_dict(data)
@@ -55,7 +56,7 @@ def load_gui_config() -> GuiConfig:
         )
 
         logging.debug("done GUI config prompt")
-        with open(GUI_CONFIG_FILE, "w", encoding="utf-8") as f:
+        with open(file, "w", encoding="utf-8") as f:
             json.dump(asdict(config), f, indent=2)
 
         logging.debug("done GUI config file write")
