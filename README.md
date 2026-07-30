@@ -1,6 +1,6 @@
 # Auto Craft of Exile
 
-Automatically executes a Craft of Exile Simulator recipe in Path of Exile.
+Automatically executes a [Craft of Exile](https://www.craftofexile.com/?game=poe1) Simulator recipe in [Path of Exile](https://www.pathofexile.com/).
 
 ## How to use
 
