@@ -6,7 +6,7 @@ from typing import Annotated
 
 import typer
 
-from autocraftofexile import LOG_FILE
+from autocraftofexile import LOG_FILE, POECD_FILE
 
 from .crafting import CraftingOptions, CraftingWorker
 from .gui_config import load_gui_config
@@ -26,11 +26,16 @@ def main(
     recipe_file: Annotated[str | None, typer.Option(
         "--recipe", help="Path to the recipe.json file")] = None,
     gui_file: Annotated[str | None, typer.Option(
-        "--gui", help="Path to the gui.json file")] = None
+        "--gui", help="Path to the gui.json file")] = None,
+    log_file: Annotated[str | None, typer.Option(
+        "--log", help="Path to the log file")] = None
 ):
-    os.makedirs("data", exist_ok=True)
+    if (log_dir := os.path.dirname(log_file or LOG_FILE)) != '':
+        os.makedirs(log_dir, exist_ok=True)
+    if (poecd_dir := os.path.dirname(poecd_data_file or POECD_FILE)) != '':
+        os.makedirs(poecd_dir, exist_ok=True)
     logging.basicConfig(
-        filename=LOG_FILE,
+        filename=log_file or LOG_FILE,
         format='%(asctime)s|%(levelname)s|%(message)s',
         encoding='utf-8',
         level=logging.DEBUG
