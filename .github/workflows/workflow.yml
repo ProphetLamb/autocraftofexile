@@ -57,5 +57,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           path: "./build"
+      - name: Build
+        run: uv build
       - name: Publish
         run: uv publish
