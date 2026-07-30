@@ -288,6 +288,7 @@ class Crafter:
     step_index: int = 0
     crafter_methods: tuple[CrafterMethod, ...]
     _cached_item: Item | None
+    _cached_coords: Coordinates | None
 
     def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, options: CraftingOptions, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
         self.config = config
@@ -297,6 +298,7 @@ class Crafter:
         self.step_index = step_index
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
         self._cached_item = None
+        self._cached_coords = None
 
     def execute(self):
         try:
@@ -456,6 +458,9 @@ class Crafter:
         return int(random.uniform(pos-4, pos+4))
 
     def move_to(self, coords: Coordinates):
+        if self._cached_coords == coords:
+            return
+        self._cached_coords = coords
         pyautogui.moveTo(
             self._position(coords.x),
             self._position(coords.y),
