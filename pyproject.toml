@@ -1,13 +1,14 @@
 [build-system]
-requires = ["setuptools>=77"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.8.14,<0.9.0"]
+build-backend = "uv_build"
 
 
 [project]
 name = "autocraftofexile"
 version = "0.1.0"
 description = "Console application for automating Craft of Exile recipes"
-requires-python = ">=3.11"
+readme = "README.md"
+requires-python = ">=3.14"
 
 dependencies = [
     "keyboard>=0.13.5",
@@ -16,18 +17,17 @@ dependencies = [
     "pywinctl>=0.4.1",
     "typer>=0.27.0",
     "pytweening>=1.2.0",
-    "pyperclip>=1.11.0"
+    "pyperclip>=1.11.0",
+    "uv>=0.12.0",
 ]
 
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-]
+dev = ["pytest>=8.0"]
 
 
 [project.scripts]
-autocraftofexile = "autocraftofexile.main:main"
+autocraftofexile = "autocraftofexile.main:app"
 
 
 [tool.setuptools.packages.find]
@@ -37,7 +37,4 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = [
-    "--import-mode=importlib",
-    "-ra",
-]
+addopts = ["--import-mode=importlib", "-ra"]

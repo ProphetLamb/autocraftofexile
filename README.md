@@ -27,8 +27,10 @@ Automatically executes a Craft of Exile Simulator recipe in Path of Exile.
 python -m venv .venv
 # use activate.bash or activate.fish on linux
 .venv\Scripts\Activate.ps1
-# install dependencies
-pip install .
+# install uv
+pip install uv
+# install autocraftofexile
+uv pip install -e .
 # start the program
 autocraftofexile
 ```
