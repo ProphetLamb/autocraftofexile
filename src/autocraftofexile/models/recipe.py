@@ -214,7 +214,7 @@ class RecipeActions:
 
 @dataclass(slots=True, frozen=True)
 class RecipeStep:
-    method: tuple[str, ...]
+    method: tuple[str | None, ...]
     mopts: Any | None
     autopass: bool
     filters: tuple[RecipeFilter, ...] | None
@@ -227,7 +227,7 @@ class RecipeStep:
         vfilter_data = data.get("vfilter")
 
         return cls(
-            method=tuple(str(value) for value in data["method"]),
+            method=tuple(data["method"]),
             mopts=data.get("mopts"),
             autopass=bool(data["autopass"]),
             filters=(

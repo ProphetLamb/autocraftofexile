@@ -149,7 +149,7 @@ class CraftStepResult:
 
 @dataclass(slots=True, frozen=True)
 class CurrencyMethodDefinition:
-    method: tuple[str, ...]
+    method: tuple[str | None, ...]
     coord_field: str
 
 
@@ -163,11 +163,19 @@ CURRENCY_METHODS: tuple[CurrencyMethodDefinition, ...] = (
         coord_field="augment",
     ),
     CurrencyMethodDefinition(
+        method=("currency", "augmentation", None),
+        coord_field="augment",
+    ),
+    CurrencyMethodDefinition(
         method=("currency", "alteration"),
         coord_field="alteration",
     ),
     CurrencyMethodDefinition(
         method=("currency", "regal", "regal_normal"),
+        coord_field="regal",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "regal", None),
         coord_field="regal",
     ),
     CurrencyMethodDefinition(
@@ -183,6 +191,10 @@ CURRENCY_METHODS: tuple[CurrencyMethodDefinition, ...] = (
         coord_field="exalt",
     ),
     CurrencyMethodDefinition(
+        method=("currency", "exalted", None),
+        coord_field="exalt",
+    ),
+    CurrencyMethodDefinition(
         method=("currency", "scour"),
         coord_field="scour",
     ),
@@ -193,7 +205,7 @@ CURRENCY_METHODS: tuple[CurrencyMethodDefinition, ...] = (
 )
 
 CURRENCY_METHOD_BY_SIGNATURE: Mapping[
-    tuple[str, ...], CurrencyMethodDefinition
+    tuple[str | None, ...], CurrencyMethodDefinition
 ] = MappingProxyType({
     definition.method: definition
     for definition in CURRENCY_METHODS
@@ -201,23 +213,28 @@ CURRENCY_METHOD_BY_SIGNATURE: Mapping[
 
 
 class CrafterMethod(ABC):
-    method: tuple[str, ...]
+    method: tuple[str | None, ...]
 
     @abstractmethod
-    def invoke(self, crafter: Crafter):
+    def invoke(self, crafter: Crafter) -> bool:
+        """Applies the crafting method to the item
+
+        Returns:
+            bool: `True` if the item changed, otherwise; `False`
+        """
         pass
 
 
 class CrafterMethodCheck(CrafterMethod):
     method = ("check", )
 
-    def invoke(self, crafter: Crafter):
+    def invoke(self, crafter: Crafter) -> bool:
         del crafter
-        pass
+        return False
 
 
-def _normalize_method(method: Iterable[str]) -> tuple[str, ...]:
-    return tuple(part.casefold() for part in method)
+def _normalize_method(method: Iterable[str | None]) -> tuple[str | None, ...]:
+    return tuple(part.casefold() if part else None for part in method)
 
 
 class CrafterMethodCurrency(CrafterMethod):
@@ -236,6 +253,7 @@ class CrafterMethodCurrency(CrafterMethod):
         crafter.right_click()
         crafter.move_to(showcase)
         crafter.left_click()
+        return True
 
     def _get_currency_coordinates(
         self,
@@ -269,6 +287,7 @@ class Crafter:
     options: CraftingOptions
     step_index: int = 0
     crafter_methods: tuple[CrafterMethod, ...]
+    _cached_item: Item | None
 
     def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, options: CraftingOptions, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
         self.config = config
@@ -277,6 +296,7 @@ class Crafter:
         self.options = options
         self.step_index = step_index
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
+        self._cached_item = None
 
     def execute(self):
         try:
@@ -305,11 +325,15 @@ class Crafter:
 
     def _get_item(self) -> Item:
         logging.debug("begin get item")
+        if self._cached_item:
+            logging.debug("end get item using cached item")
+            return self._cached_item
+
         showcase = self.config.showcase
 
         self.move_to(showcase)
         self.hotkey("ctrl", "alt", "c")
-        time.sleep(self._duration(0.50))
+        time.sleep(self._duration(1 / self.options.speed))
 
         text = pyperclip.paste()
 
@@ -319,8 +343,10 @@ class Crafter:
             )
         pyperclip.copy('')
 
+        item = parse_item(text)
+        self._cached_item = item
         logging.debug("done get item")
-        return parse_item(text)
+        return item
 
     def _invoke_step(self):
         logging.debug("begin invoke step %d", self.step_index)
@@ -349,7 +375,14 @@ class Crafter:
                 f"{step.method!r}"
             )
 
-        crafter_method.invoke(self)
+        item_changed = crafter_method.invoke(self)
+        if item_changed:
+            cached_item = self._cached_item
+            self._cached_item = None
+            item = self._get_item()
+            if item == cached_item:
+                logging.warn("item has not changed due to the crafting method=%s item=%s", repr(crafter_method), repr(item))
+                print("Item has not changed due to the crafting method")
 
         logging.debug(
             "done invoke step %d using method %r",
@@ -426,22 +459,18 @@ class Crafter:
         pyautogui.moveTo(
             self._position(coords.x),
             self._position(coords.y),
-            duration=self._duration(1 / self.options.speed * 0.75),
+            duration=self._duration(5 / self.options.speed),
             tween=pytweening.easeInOutElastic
         )
-        time.sleep(1 / self.options.speed * 0.25)
 
     def left_click(self):
-        pyautogui.leftClick(duration=self._duration(1 / self.options.speed * 0.75))
-        time.sleep(1 / self.options.speed * 0.25)
+        pyautogui.leftClick(duration=self._duration(1 / self.options.speed))
 
     def right_click(self):
-        pyautogui.rightClick(duration=self._duration(1 / self.options.speed * 0.75))
-        time.sleep(1 / self.options.speed * 0.25)
+        pyautogui.rightClick(duration=self._duration(1 / self.options.speed))
 
     def hotkey(self, *keys: str):
-        pyautogui.hotkey(*keys, interval=self._duration(1 / self.options.speed * 0.75))
-        time.sleep(1 / self.options.speed * 0.25)
+        pyautogui.hotkey(*keys, interval=self._duration(1 / self.options.speed))
 
 
 def _repr_condition(cond: RecipeCondition, poecd: PoeCd):
