@@ -48,15 +48,42 @@ def parse_item(text: str) -> Item:
         line for line in lines[rarity_index + 1: identity_end]
         if not _FIELD_RE.match(line)
     ]
-    if len(identity_lines) < 2:
-        raise ValueError("Expected item name and base item after Rarity")
-
-    ident = ItemIdentifier(
-        item_class=_required_field(lines, "Item Class"),
-        rarity=_required_field(lines, "Rarity"),
-        name=identity_lines[0],
-        base_item=identity_lines[1],
-    )
+    rarity = _required_field(lines, "Rarity")
+    ident: ItemIdentifier
+    match rarity:
+        case "Normal":
+            if len(identity_lines) < 1:
+                raise ValueError("Expected item name after Rarity")
+            ident = ItemIdentifier(
+                item_class=_required_field(lines, "Item Class"),
+                rarity=rarity,
+                name=identity_lines[0],
+                base_item=identity_lines[0],
+            )
+        case "Magic":
+            if len(identity_lines) < 1:
+                raise ValueError("Expected item name after Rarity")
+            ident = ItemIdentifier(
+                item_class=_required_field(lines, "Item Class"),
+                rarity=rarity,
+                name=identity_lines[0],
+                # Unleashed Lathi of Steadiness, Lathi of Steadiness, Unleashed Lathi
+                base_item=(
+                    identity_lines[0][:suffix_index]
+                    if (suffix_index := identity_lines[0].find(' of ')) == -1
+                    else identity_lines[0]
+                ).split(' ', 2).pop(),
+            )
+        case _:
+            if len(identity_lines) < 2:
+                raise ValueError(
+                    "Expected item name and base item after Rarity")
+            ident = ItemIdentifier(
+                item_class=_required_field(lines, "Item Class"),
+                rarity=rarity,
+                name=identity_lines[0],
+                base_item=identity_lines[1],
+            )
 
     base_index = identity_end + 1
     if base_index >= len(lines) or _SEPARATOR_RE.fullmatch(lines[base_index]):

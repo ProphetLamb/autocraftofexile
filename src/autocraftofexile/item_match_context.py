@@ -4,8 +4,6 @@ import re
 from dataclasses import dataclass, field
 from typing import Callable
 
-from src.autocraftofexile.item_match_context import attacks_per_second
-
 from .models.item import Item, ItemModifier
 from .models.poecd import PoeCd
 from .models.recipe import RecipeCondition, RecipeData
@@ -247,15 +245,24 @@ class ItemMatchContext:
     def open_prefixes(self) -> int:
         return max(
             0,
-            self.recipe_data.maxaffgrp.prefix - self.prefix_count,
+            self._rarity_sensitive_maxaffgrp(self.recipe_data.maxaffgrp.prefix) - self.prefix_count,
         )
 
     @property
     def open_suffixes(self) -> int:
         return max(
             0,
-            self.recipe_data.maxaffgrp.suffix - self.suffix_count,
+            self._rarity_sensitive_maxaffgrp(self.recipe_data.maxaffgrp.suffix) - self.suffix_count,
         )
+        
+    def _rarity_sensitive_maxaffgrp(self, maxaffgrp: int):
+        match self.item.ident.rarity:
+            case "Normal":
+                return 0
+            case "Magic":
+                return 1
+            case _:
+                return maxaffgrp
 
     def _build_templates(
         self,

@@ -2,6 +2,7 @@ import json
 import logging
 from dataclasses import asdict
 from os import PathLike
+import time
 
 import keyboard
 import pyautogui
@@ -12,19 +13,19 @@ from .models.gui_config import Coordinates, GuiConfig
 
 
 def prompt_coordinates(name: str) -> Coordinates:
+    time.sleep(0.1)
     print()
-    print(f"Move mouse to the {name} and press ENTER.")
-
+    input(f"Move mouse to the {name} and press ENTER.")
     x, y = pyautogui.position()
     print(f"{name}: {x}, {y}")
     return Coordinates(x, y)
 
 
 def prompt_hotkey(name: str) -> str:
+    time.sleep(0.1)
     print()
     print(f"Press the {name} hotkey.")
-
-    hotkey = keyboard.read_hotkey()
+    hotkey = keyboard.read_hotkey(suppress=False)
     print(f"{name} hotkey: {hotkey}")
     return hotkey
 
@@ -36,21 +37,25 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
         with open(file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        return GuiConfig.from_dict(data)
+        config = GuiConfig.from_dict(data)
+        print("Successfully loaded gui config")
+        print(f"Start hotkey {config.start_hotkey}")
+        print(f"Stop hotkey {config.stop_hotkey}")
+        return config
 
     except FileNotFoundError:
         logging.debug("begin GUI config prompt")
         config = GuiConfig(
-            showcase=prompt_coordinates("Item Showcase"),
             transmute=prompt_coordinates("Orb of Transmutation"),
-            augment=prompt_coordinates("Orb of Augmentation"),
             alteration=prompt_coordinates("Orb of Alteration"),
+            annul=prompt_coordinates("Orb of Annulment"),
+            augment=prompt_coordinates("Orb of Augmentation"),
+            exalt=prompt_coordinates("Exalted Orb"),
             regal=prompt_coordinates("Regal Orb"),
             alchemy=prompt_coordinates("Alchemy Orb"),
             chaos=prompt_coordinates("Chaos Orb"),
-            exalt=prompt_coordinates("Exalted Orb"),
             scour=prompt_coordinates("Orb of Scouring"),
-            annul=prompt_coordinates("Orb of Annulment"),
+            showcase=prompt_coordinates("Item Showcase"),
             start_hotkey=prompt_hotkey("start"),
             stop_hotkey=prompt_hotkey("stop"),
         )

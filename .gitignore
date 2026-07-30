@@ -5,3 +5,5 @@ __pycache__/
 /data/gui.json
 /.vscode/PythonImportHelper-v2-Completion.json
 *.log
+*.egg-info/
+/build/

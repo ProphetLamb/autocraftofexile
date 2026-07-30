@@ -1,4 +1,4 @@
-from src.autocraftofexile.gui_config import load_gui_config
+from autocraftofexile.gui_config import load_gui_config
 from tests import GUI_EXAMPLE
 
 

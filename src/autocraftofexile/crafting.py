@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pywinctl as pwc
 import logging
 import random
 import threading
@@ -259,6 +260,11 @@ class Crafter:
 
     def execute(self):
         try:
+            self._ensure_window_focus()
+        except:
+            print("Failed to focus Path of Exile")
+            raise
+        try:
             self._invoke_step()
         except:
             print("Failed to invoke the crafting step")
@@ -283,7 +289,7 @@ class Crafter:
 
         self.move_to(showcase)
         self.hotkey("ctrl", "alt", "c")
-        time.sleep(self._duration(0.10))
+        time.sleep(self._duration(0.50))
 
         text = pyperclip.paste()
 
@@ -351,21 +357,14 @@ class Crafter:
         logging.debug("begin goto step %s %s", action, route)
 
         action = action.casefold()
-        done = self.step_index >= len(self.recipe.config)
-        if done:
-            print("Done")
-        else:
-            print(f"{'Success' if match.success else 'Failed'} {action} {route}")
-        if not match.success:
-            print(
-                f"Conditions failed {', '.join(_repr_match_failure(x, self.poecd) for x in match.failed)}"
-            )
         if action == 'loop':
             pass
         elif action == 'restart':
             self.step_index = 0
         elif action == 'next':
             self.step_index += 1
+        elif action == 'end':
+            self.step_index = len(self.recipe.config)
         elif action == 'step':
             if route == None:
                 raise ValueError(
@@ -375,8 +374,26 @@ class Crafter:
         else:
             raise ValueError(f"Unknown action {action}")
 
+        done = self.step_index >= len(self.recipe.config)
+        if done:
+            print("Done")
+        else:
+            print(f"{'Success' if match.success else 'Failed'} {action} {route or ''}")
+        if not match.success:
+            print(
+                f"Conditions failed {', '.join(_repr_condition(x, self.poecd) for x in match.failed)}"
+            )
         logging.debug("done goto step")
         return CraftStepResult(match, done)
+
+    def _ensure_window_focus(self):
+        poe = pwc.getWindowsWithTitle("Path of Exile").pop()
+        if poe == None:
+            raise ValueError("Path of Exile is not running")
+        if poe != pwc.getActiveWindow():
+            logging.info("Path of Exile is not focussed")
+            self.move_to(self.config.showcase)
+            self.right_click()
 
     def _duration(self, duration: float) -> float:
         return random.uniform(duration*0.85, duration*1.15)
@@ -388,21 +405,25 @@ class Crafter:
         pyautogui.moveTo(
             self._position(coords.x),
             self._position(coords.y),
-            duration=self._duration(0.13),
+            duration=self._duration(0.05),
             tween=pytweening.easeInOutElastic
         )
+        time.sleep(0.01)
 
     def left_click(self):
         pyautogui.leftClick(duration=self._duration(0.05))
+        time.sleep(0.01)
 
     def right_click(self):
-        pyautogui.leftClick(duration=self._duration(0.05))
+        pyautogui.rightClick(duration=self._duration(0.05))
+        time.sleep(0.001)
 
     def hotkey(self, *keys: str):
         pyautogui.hotkey(*keys, interval=self._duration(0.05))
+        time.sleep(0.01)
 
 
-def _repr_match_failure(cond: RecipeCondition, poecd: PoeCd):
+def _repr_condition(cond: RecipeCondition, poecd: PoeCd):
     if cond.id.isdigit():
         modifier = poecd.modifiers.get(cond.id)
         return modifier.name_modifier if modifier != None else f"modifier #{cond.id}"

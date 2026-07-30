@@ -1,3 +1,5 @@
+from pathlib import Path
+import pytest
 from autocraftofexile.item_parser import parse_item
 from autocraftofexile.models.item import (
     ItemIdentifier,
@@ -6,12 +8,21 @@ from autocraftofexile.models.item import (
     ItemRequirements,
     SocketLinks,
 )
-from tests import CLIPBOARD_EXAMPLE
+from tests import CLIPBOARD_EXAMPLE_MAGIC, CLIPBOARD_EXAMPLE_NORMAL, CLIPBOARD_EXAMPLE_RARE
 
 
-def test_parse_clipboard_example() -> None:
-    item = parse_item(CLIPBOARD_EXAMPLE.read_text(encoding="utf-8"))
+@pytest.mark.parametrize("file, rarity", [
+    pytest.param(CLIPBOARD_EXAMPLE_MAGIC, "Magic"),
+    pytest.param(CLIPBOARD_EXAMPLE_NORMAL, "Normal"),
+    pytest.param(CLIPBOARD_EXAMPLE_RARE, "Rare"),
+])
+def test_parse_clipboard_example(file: Path, rarity: str) -> None:
+    item = parse_item(file.read_text(encoding="utf-8"))
+    assert item != None
+    assert item.ident.rarity == rarity
 
+def test_parse_clipboard_example_rare() -> None:
+    item = parse_item(CLIPBOARD_EXAMPLE_RARE.read_text(encoding="utf-8"))
     assert item.ident == ItemIdentifier(
         item_class="Staves",
         rarity="Rare",
