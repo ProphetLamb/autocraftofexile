@@ -22,16 +22,10 @@ Automatically executes a Craft of Exile Simulator recipe in Path of Exile.
 
 ### Start `autocraftofexile`
 
+Install package from PyPi. Ensure python 3.14 is installed on your system.
+
 ```bash
-# activate the python venv
-python -m venv .venv
-# use activate.bash or activate.fish on linux
-.venv\Scripts\Activate.ps1
-# install uv
-pip install uv
-# install autocraftofexile
-uv pip install -e .
-# start the program
+pip install autocraftofexile
 autocraftofexile
 ```
 
@@ -74,3 +68,20 @@ Activate `autocraftofexile` crafting by pressing the start hotkey, e.g. `f9`.
 | Info |
 | --- |
 | Ensure the Stash tab is open on the page with the crafting items |
+
+
+## Building from source
+
+```bash
+git clone https://github.com/ProphetLamb/autocraftofexile.git
+# activate the python venv
+python -m venv .venv
+# use activate.bash or activate.fish on linux
+.venv\Scripts\Activate.ps1
+# install uv
+pip install uv
+# install autocraftofexile
+uv pip install -e .
+# start the program
+autocraftofexile
+```
