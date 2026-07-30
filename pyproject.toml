@@ -11,7 +11,7 @@ readme = "README.md"
 authors = [
     { name = "ProphetLamb", email = "prophet.lamb@gmail.com" }
 ]
-license = "MIP"
+license = "MIT AND (Apache-2.0 OR BSD-2-Clause)"
 urls = { Repository = "https://github.com/ProphetLamb/autocraftofexile.git", GitHub = "https://github.com/ProphetLamb/autocraftofexile" }
 
 requires-python = ">=3.14"
