@@ -29,7 +29,7 @@ class ItemProperties:
     critical_strike_chance: str | None = None
     attacks_per_second: str | None = None
     weapon_range: str | None = None
-    additional: tuple[str, ...] = field(default_factory=tuple[str])
+    additional: tuple[str, ...] = tuple()
 
     def __repr__(self) -> str:
         lines: list[str] = []
@@ -74,7 +74,7 @@ class ItemRequirements:
 
 @dataclass(slots=True, frozen=True)
 class SocketLinks:
-    sockets: tuple[str, ...]
+    sockets: tuple[str, ...] = tuple()
 
     def __repr__(self) -> str:
         return "-".join(self.sockets)

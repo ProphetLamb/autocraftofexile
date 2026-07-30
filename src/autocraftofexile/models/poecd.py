@@ -25,9 +25,9 @@ class SparseArray(Generic[T]):
         item_factory: Callable[[Mapping[str, Any]], T],
     ) -> Self:
         return cls(
-            seq=tuple[T](item_factory(item) for item in data["seq"]),
+            seq=tuple[T](item_factory(item) for item in data.get("seq", [])),
             ind=MappingProxyType({str(key): int(index)
-                                 for key, index in data["ind"].items()}),
+                                 for key, index in data.get("ind", {}).items()}),
         )
 
     def __getitem__(self, key: str) -> T:
@@ -234,9 +234,9 @@ class Aliases:
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             values=MappingProxyType({
-                str(base_id): MappingProxyType({
-                    str(affix): MappingProxyType({
-                        str(modifier_name): tuple(
+                base_id: MappingProxyType({
+                    affix: MappingProxyType({
+                        modifier_name: tuple(
                             AliasModifier.from_dict(entry) for entry in entries
                         )
                         for modifier_name, entries in modifiers.items()
@@ -276,8 +276,8 @@ class Tiers:
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             values=MappingProxyType({
-                str(modifier_id): MappingProxyType({
-                    str(group_id): tuple(ModifierTier.from_dict(tier) for tier in tiers)
+                modifier_id: MappingProxyType({
+                    group_id: tuple(ModifierTier.from_dict(tier) for tier in tiers)
                     for group_id, tiers in groups.items()
                 })
                 for modifier_id, groups in data.items()
@@ -302,17 +302,17 @@ class PoeCd:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            bitems=BItems.from_dict(data["bitems"]),
-            bases=Bases.from_dict(data["bases"]),
+            bitems=BItems.from_dict(data.get("bitems", {})),
+            bases=Bases.from_dict(data.get("bases", {})),
             bgroups=SparseArray[BGroup].from_dict(
-                data["bgroups"], BGroup.from_dict),
+                data.get("bgroups", {}), BGroup.from_dict),
             modifiers=SparseArray[Modifier].from_dict(
-                data["modifiers"], Modifier.from_dict
+                data.get("modifiers", {}), Modifier.from_dict
             ),
             mgroups=SparseArray[MGroup].from_dict(
-                data["mgroups"], MGroup.from_dict),
+                data.get("mgroups", {}), MGroup.from_dict),
             mtypes=SparseArray[MType].from_dict(
-                data["mtypes"], MType.from_dict),
-            aliases=Aliases.from_dict(data["aliases"]),
-            tiers=Tiers.from_dict(data["tiers"]),
+                data.get("mtypes", {}), MType.from_dict),
+            aliases=Aliases.from_dict(data.get("aliases", {})),
+            tiers=Tiers.from_dict(data.get("tiers", {})),
         )
