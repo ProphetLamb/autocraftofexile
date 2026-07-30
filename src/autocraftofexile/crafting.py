@@ -23,17 +23,25 @@ from .models.poecd import PoeCd
 from .models.recipe import Recipe, RecipeCondition
 
 
+@dataclass
+class CraftingOptions:
+    speed: int
+
+
 class CraftingWorker:
     thread: threading.Thread | None
     config: GuiConfig
     recipe: Recipe
     poecd: PoeCd
+    options: CraftingOptions
+    is_running: bool
 
     def __init__(
         self,
         config: GuiConfig,
         recipe: Recipe,
         poecd: PoeCd,
+        options: CraftingOptions
     ) -> None:
         self._stop_event = threading.Event()
         self._shutdown_event = threading.Event()
@@ -42,15 +50,17 @@ class CraftingWorker:
         self.config = config
         self.recipe = recipe
         self.poecd = poecd
+        self.options = options
+        self.is_running = False
 
     def run(self) -> None:
         start_hotkey = keyboard.add_hotkey(
             self.config.start_hotkey,
-            self._start,
+            self.start,
         )
         stop_hotkey = keyboard.add_hotkey(
             self.config.stop_hotkey,
-            self._stop,
+            self.stop,
         )
 
         try:
@@ -61,7 +71,7 @@ class CraftingWorker:
             keyboard.remove_hotkey(start_hotkey)
             keyboard.remove_hotkey(stop_hotkey)
 
-            self._stop()
+            self.stop()
 
             with self._thread_lock:
                 thread = self.thread
@@ -71,7 +81,7 @@ class CraftingWorker:
                 finally:
                     self._shutdown_event.clear()
 
-    def _start(self) -> None:
+    def start(self) -> None:
         with self._thread_lock:
             if self.thread is not None and self.thread.is_alive():
                 return
@@ -84,13 +94,15 @@ class CraftingWorker:
                 daemon=True,
             )
             self.thread.start()
+            self.is_running = True
 
-    def _stop(self) -> None:
+    def stop(self) -> None:
         with self._thread_lock:
             thread = self.thread
 
             if thread is not None and thread.is_alive():
                 self._stop_event.set()
+            self.is_running = False
 
     def _main(self) -> None:
         current_thread = threading.current_thread()
@@ -100,6 +112,7 @@ class CraftingWorker:
                 self.config,
                 self.recipe,
                 self.poecd,
+                self.options
             )
 
             while not self._stop_event.is_set():
@@ -248,13 +261,15 @@ class Crafter:
     config: GuiConfig
     recipe: Recipe
     poecd: PoeCd
+    options: CraftingOptions
     step_index: int = 0
     crafter_methods: tuple[CrafterMethod, ...]
 
-    def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
+    def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, options: CraftingOptions, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
         self.config = config
         self.recipe = recipe
         self.poecd = poecd
+        self.options = options
         self.step_index = step_index
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
 
@@ -378,7 +393,8 @@ class Crafter:
         if done:
             print("Done")
         else:
-            print(f"{'Success' if match.success else 'Failed'} {action} {route or ''}")
+            print(
+                f"{'Success' if match.success else 'Failed'} {action} {route or ''}")
         if not match.success:
             print(
                 f"Conditions failed {', '.join(_repr_condition(x, self.poecd) for x in match.failed)}"
@@ -405,22 +421,22 @@ class Crafter:
         pyautogui.moveTo(
             self._position(coords.x),
             self._position(coords.y),
-            duration=self._duration(0.05),
+            duration=self._duration(1 / self.options.speed * 0.75),
             tween=pytweening.easeInOutElastic
         )
-        time.sleep(0.01)
+        time.sleep(1 / self.options.speed * 0.25)
 
     def left_click(self):
-        pyautogui.leftClick(duration=self._duration(0.05))
-        time.sleep(0.01)
+        pyautogui.leftClick(duration=self._duration(1 / self.options.speed * 0.75))
+        time.sleep(1 / self.options.speed * 0.25)
 
     def right_click(self):
-        pyautogui.rightClick(duration=self._duration(0.05))
-        time.sleep(0.001)
+        pyautogui.rightClick(duration=self._duration(1 / self.options.speed * 0.75))
+        time.sleep(1 / self.options.speed * 0.25)
 
     def hotkey(self, *keys: str):
-        pyautogui.hotkey(*keys, interval=self._duration(0.05))
-        time.sleep(0.01)
+        pyautogui.hotkey(*keys, interval=self._duration(1 / self.options.speed * 0.75))
+        time.sleep(1 / self.options.speed * 0.25)
 
 
 def _repr_condition(cond: RecipeCondition, poecd: PoeCd):
