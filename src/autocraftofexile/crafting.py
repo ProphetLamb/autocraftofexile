@@ -34,7 +34,7 @@ class CraftingWorker:
     recipe: Recipe
     poecd: PoeCd
     options: CraftingOptions
-    is_running: bool
+    is_exit_requested: bool
 
     def __init__(
         self,
@@ -44,14 +44,14 @@ class CraftingWorker:
         options: CraftingOptions
     ) -> None:
         self._stop_event = threading.Event()
-        self._shutdown_event = threading.Event()
+        self._exit_event = threading.Event()
         self._thread_lock = threading.Lock()
         self.thread = None
         self.config = config
         self.recipe = recipe
         self.poecd = poecd
         self.options = options
-        self.is_running = False
+        self.is_exit_requested = False
 
     def run(self) -> None:
         start_hotkey = keyboard.add_hotkey(
@@ -66,7 +66,7 @@ class CraftingWorker:
         try:
             # Keep the process alive and listen for hotkeys.
             # The crafting thread is not started until _start() is called.
-            self._shutdown_event.wait()
+            self._exit_event.wait()
         finally:
             keyboard.remove_hotkey(start_hotkey)
             keyboard.remove_hotkey(stop_hotkey)
@@ -79,7 +79,7 @@ class CraftingWorker:
                     if thread is not None and thread.is_alive():
                         thread.join()
                 finally:
-                    self._shutdown_event.clear()
+                    self._exit_event.clear()
 
     def start(self) -> None:
         with self._thread_lock:
@@ -94,7 +94,10 @@ class CraftingWorker:
                 daemon=True,
             )
             self.thread.start()
-            self.is_running = True
+
+    def exit(self) -> None:
+        self.is_exit_requested = True
+        self.stop()
 
     def stop(self) -> None:
         with self._thread_lock:
@@ -102,7 +105,6 @@ class CraftingWorker:
 
             if thread is not None and thread.is_alive():
                 self._stop_event.set()
-            self.is_running = False
 
     def _main(self) -> None:
         current_thread = threading.current_thread()
@@ -125,6 +127,8 @@ class CraftingWorker:
             message = "Crafter terminated unexpectedly"
             logging.exception(message)
             print(message)
+            if not self.is_exit_requested:
+                print(f"Press {self.config.start_hotkey} to start crafting again")
 
         finally:
             with self._thread_lock:
@@ -133,7 +137,8 @@ class CraftingWorker:
                     self.thread = None
 
                 self._stop_event.clear()
-                self._shutdown_event.set()
+                if self.is_exit_requested:
+                    self._exit_event.set()
 
 
 @dataclass(slots=True, frozen=True)
