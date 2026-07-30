@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 import logging
 import re
 from dataclasses import replace
+from types import MappingProxyType
 from typing import Iterable, List
+
+from .models.recipe import AffixGroups
 
 from .models.item import (
     Item,
@@ -35,6 +39,92 @@ _PROPERTY_NAMES = {
 }
 
 
+class RarityItemDetails(ABC):
+    rarity: str
+    max_affix: AffixGroups | None = None
+
+    @abstractmethod
+    def parse_identifier(self, item_class: str, identity_lines: List[str]) -> ItemIdentifier:
+        pass
+
+
+class NormalItemDetails(RarityItemDetails):
+    rarity = "Normal"
+    max_affix = AffixGroups(0, 0)
+
+    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+        if len(identity_lines) < 1:
+            raise ValueError("Expected item name after Rarity")
+        return ItemIdentifier(
+            item_class=item_class,
+            rarity="Normal",
+            name=identity_lines[0],
+            base_item=identity_lines[0],
+        )
+
+
+class MagicItemDetails(RarityItemDetails):
+    rarity = "Magic"
+    max_affix = AffixGroups(1, 1)
+
+    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+        if len(identity_lines) < 1:
+            raise ValueError("Expected item name after Rarity")
+        return ItemIdentifier(
+            item_class=item_class,
+            rarity="Magic",
+            name=identity_lines[0],
+            # Unleashed Lathi of Steadiness, Lathi of Steadiness, Unleashed Lathi
+            base_item=(
+                identity_lines[0][:suffix_index]
+                if (suffix_index := identity_lines[0].find(' of ')) == -1
+                else identity_lines[0]
+            ).split(' ', 2).pop(),
+        )
+
+
+class RareItemDetails(RarityItemDetails):
+    rarity = "Rare"
+
+    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+        if len(identity_lines) < 2:
+            raise ValueError(
+                "Expected item name and base item after Rarity")
+        return ItemIdentifier(
+            item_class=item_class,
+            rarity="Rare",
+            name=identity_lines[0],
+            base_item=identity_lines[1],
+        )
+
+
+class UniqueItemDetails(RareItemDetails):
+    rarity = "Unique"
+
+    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+        if len(identity_lines) < 2:
+            raise ValueError(
+                "Expected item name and base item after Rarity")
+        return ItemIdentifier(
+            item_class=item_class,
+            rarity="Unique",
+            name=identity_lines[0],
+            base_item=identity_lines[1],
+        )
+
+
+ITEM_DETAILS: tuple[RarityItemDetails, ...] = (
+    NormalItemDetails(),
+    MagicItemDetails(),
+    RareItemDetails(),
+    UniqueItemDetails()
+)
+ITEM_DETAIL_BY_RARITY = MappingProxyType({
+    parser.rarity.casefold(): parser
+    for parser in ITEM_DETAILS
+})
+
+
 def parse_item(text: str) -> Item:
     logging.debug('begin parse item text=%s', text)
     lines = [line.strip() for line in text.replace("\r\n", "\n").split("\n")]
@@ -44,46 +134,16 @@ def parse_item(text: str) -> Item:
 
     rarity_index = _field_index(lines, "Rarity")
     identity_end = _next_separator(lines, rarity_index + 1)
+    rarity = _required_field(lines, "Rarity")
+    item_class = _required_field(lines, "Item Class")
     identity_lines = [
         line for line in lines[rarity_index + 1: identity_end]
         if not _FIELD_RE.match(line)
     ]
-    rarity = _required_field(lines, "Rarity")
-    ident: ItemIdentifier
-    match rarity:
-        case "Normal":
-            if len(identity_lines) < 1:
-                raise ValueError("Expected item name after Rarity")
-            ident = ItemIdentifier(
-                item_class=_required_field(lines, "Item Class"),
-                rarity=rarity,
-                name=identity_lines[0],
-                base_item=identity_lines[0],
-            )
-        case "Magic":
-            if len(identity_lines) < 1:
-                raise ValueError("Expected item name after Rarity")
-            ident = ItemIdentifier(
-                item_class=_required_field(lines, "Item Class"),
-                rarity=rarity,
-                name=identity_lines[0],
-                # Unleashed Lathi of Steadiness, Lathi of Steadiness, Unleashed Lathi
-                base_item=(
-                    identity_lines[0][:suffix_index]
-                    if (suffix_index := identity_lines[0].find(' of ')) == -1
-                    else identity_lines[0]
-                ).split(' ', 2).pop(),
-            )
-        case _:
-            if len(identity_lines) < 2:
-                raise ValueError(
-                    "Expected item name and base item after Rarity")
-            ident = ItemIdentifier(
-                item_class=_required_field(lines, "Item Class"),
-                rarity=rarity,
-                name=identity_lines[0],
-                base_item=identity_lines[1],
-            )
+    identifier_parser = ITEM_DETAIL_BY_RARITY.get(rarity.casefold())
+    if identifier_parser == None:
+        raise ValueError(f"Unknown rarity {rarity}")
+    ident = identifier_parser.parse_identifier(item_class, identity_lines)
 
     base_index = identity_end + 1
     if base_index >= len(lines) or _SEPARATOR_RE.fullmatch(lines[base_index]):

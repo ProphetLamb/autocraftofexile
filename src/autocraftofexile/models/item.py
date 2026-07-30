@@ -35,10 +35,8 @@ class ItemProperties:
         lines: list[str] = []
         if self.physical_damage is not None:
             lines.append(f"Physical Damage: {self.physical_damage}")
-        lines: list[str] = []
         if self.elemental_damage is not None:
             lines.append(f"Elemental Damage: {self.elemental_damage}")
-        lines: list[str] = []
         if self.chaos_damage is not None:
             lines.append(f"Chaos Damage: {self.chaos_damage}")
         if self.critical_strike_chance is not None:

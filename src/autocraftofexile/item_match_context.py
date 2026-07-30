@@ -7,6 +7,7 @@ from typing import Callable
 from .models.item import Item, ItemModifier
 from .models.poecd import PoeCd
 from .models.recipe import RecipeCondition, RecipeData
+from .item_parser import ITEM_DETAIL_BY_RARITY, RarityItemDetails
 
 RecipeConditions = set[RecipeCondition]
 
@@ -243,26 +244,25 @@ class ItemMatchContext:
 
     @property
     def open_prefixes(self) -> int:
-        return max(
-            0,
-            self._rarity_sensitive_maxaffgrp(self.recipe_data.maxaffgrp.prefix) - self.prefix_count,
-        )
+        max_prefix = self.recipe_data.maxaffgrp.prefix
+        max_prefix = min(
+            max_affix.prefix,
+            max_prefix
+        ) if (max_affix := self.rarity_details.max_affix) else max_prefix
+        return max(0, max_prefix - self.prefix_count)
 
     @property
     def open_suffixes(self) -> int:
-        return max(
-            0,
-            self._rarity_sensitive_maxaffgrp(self.recipe_data.maxaffgrp.suffix) - self.suffix_count,
-        )
-        
-    def _rarity_sensitive_maxaffgrp(self, maxaffgrp: int):
-        match self.item.ident.rarity:
-            case "Normal":
-                return 0
-            case "Magic":
-                return 1
-            case _:
-                return maxaffgrp
+        max_suffix = self.recipe_data.maxaffgrp.suffix
+        max_suffix = min(
+            max_affix.suffix,
+            max_suffix
+        ) if (max_affix := self.rarity_details.max_affix) else max_suffix
+        return max(0, max_suffix - self.suffix_count)
+
+    @property
+    def rarity_details(self) -> RarityItemDetails:
+        return ITEM_DETAIL_BY_RARITY[self.item.ident.rarity.casefold()]
 
     def _build_templates(
         self,

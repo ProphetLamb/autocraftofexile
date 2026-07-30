@@ -49,8 +49,6 @@ def main(
 
     def sigint(signal, frame):
         del signal, frame
-        if not worker.is_exit_requested:
-            worker.exit()
         sys.exit(-1)
     signal.signal(signal.SIGINT, sigint)
     worker.run()
