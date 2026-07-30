@@ -7,4 +7,3 @@ __pycache__/
 *.log
 *.egg-info/
 /build/
-/uv.lock
