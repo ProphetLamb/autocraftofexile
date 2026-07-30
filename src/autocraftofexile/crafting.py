@@ -98,6 +98,7 @@ class CraftingWorker:
     def exit(self) -> None:
         self.is_exit_requested = True
         self.stop()
+        self._exit_event.wait()
 
     def stop(self) -> None:
         with self._thread_lock:

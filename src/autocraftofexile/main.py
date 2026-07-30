@@ -46,8 +46,7 @@ def main(
         del signal, frame
         if not worker.is_exit_requested:
             worker.exit()
-        else:
-            sys.exit(-1)
+        sys.exit(-1)
     signal.signal(signal.SIGINT, sigint)
     worker.run()
     logging.debug("done autocraftofexile")
