@@ -416,6 +416,84 @@ class ElementalDamageRule(ItemPropertyRule):
         return context.elemental_damage
 
 
+class ItemSocketsRule(ItemPropertyRule):
+    condition_id = "pseudo_socket_count"
+
+    def value(self, context: ItemMatchContext) -> float:
+        return sum(len(links.sockets) for links in context.item.sockets)
+
+
+class ItemLinksRule(ItemPropertyRule):
+    condition_id = "pseudo_link_count"
+
+    def value(self, context: ItemMatchContext) -> float:
+        return max(len(links.sockets) for links in context.item.sockets)
+
+
+class ItemSocketColorRule(ItemPropertyRule, ABC):
+    color: str
+
+    def value(self, context: ItemMatchContext) -> float:
+        return sum(sum(1 for color in links.sockets if color.casefold() == self.color) for links in context.item.sockets)
+
+
+class ItemSocketWhiteRule(ItemSocketColorRule):
+    condition_id = "pseudo_socket_white"
+    color = "w"
+
+
+class ItemSocketAbyssRule(ItemSocketColorRule):
+    condition_id = "pseudo_socket_abyss"
+    color = "a"
+
+
+class ItemSocketRedRule(ItemSocketColorRule):
+    condition_id = "pseudo_socket_red"
+    color = "r"
+
+
+class ItemSocketGreenRule(ItemSocketColorRule):
+    condition_id = "pseudo_socket_green"
+    color = "g"
+
+
+class ItemSocketBlueRule(ItemSocketColorRule):
+    condition_id = "pseudo_socket_blue"
+    color = "b"
+
+
+class ItemLinkColorRule(ItemPropertyRule, ABC):
+    color: str
+
+    def value(self, context: ItemMatchContext) -> float:
+        return max(sum(1 for color in links.sockets if color.casefold() == self.color) for links in context.item.sockets)
+
+
+class ItemLinkWhiteRule(ItemLinkColorRule):
+    condition_id = "pseudo_link_white"
+    color = "w"
+
+
+class ItemLinkAbyssRule(ItemLinkColorRule):
+    condition_id = "pseudo_link_abyss"
+    color = "a"
+
+
+class ItemLinkRedRule(ItemLinkColorRule):
+    condition_id = "pseudo_link_red"
+    color = "r"
+
+
+class ItemLinkGreenRule(ItemLinkColorRule):
+    condition_id = "pseudo_link_green"
+    color = "g"
+
+
+class ItemLinkBlueRule(ItemLinkColorRule):
+    condition_id = "pseudo_link_blue"
+    color = "b"
+
+
 DEFAULT_RULES: tuple[Rule, ...] = (
     OpenAffixRule(),
     OpenPrefixRule(),
@@ -446,4 +524,16 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     PhysicalDpsRule(),
     PhysicalDamageRule(),
     ElementalDamageRule(),
+    ItemSocketsRule(),
+    ItemLinksRule(),
+    ItemSocketWhiteRule(),
+    ItemSocketAbyssRule(),
+    ItemSocketRedRule(),
+    ItemSocketGreenRule(),
+    ItemSocketBlueRule(),
+    ItemLinkWhiteRule(),
+    ItemLinkAbyssRule(),
+    ItemLinkRedRule(),
+    ItemLinkGreenRule(),
+    ItemLinkBlueRule(),
 )
