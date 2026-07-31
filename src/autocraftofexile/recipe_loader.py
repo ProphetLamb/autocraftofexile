@@ -30,6 +30,7 @@ def validate_recipe(
     crafting_methods: Iterable[CrafterMethod],
     modifier_rules: Iterable[Rule]
 ):
+    logging.debug("begin validating recipe")
     errors: list[str] = []
 
     def validate_cond(prefix: str, cond: RecipeCondition):
@@ -64,4 +65,5 @@ def validate_recipe(
 
     for si, step in enumerate(recipe.config):
         validate_step(f"Step {si+1}", step)
+    logging.debug("done validating recipe %s", repr(errors))
     return errors

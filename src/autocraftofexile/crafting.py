@@ -265,6 +265,7 @@ def _find_method(methods: Iterable[CrafterMethod], method: Iterable[str | None])
         None,
     )
 
+
 class CrafterMethodCurrency(CrafterMethod):
     definition: CurrencyMethodDefinition
 
@@ -339,7 +340,7 @@ class Crafter:
         try:
             self._invoke_step()
         except:
-            print("Failed to invoke the crafting step")
+            print(f"Failed to invoke crafting step {self.step_index + 1}")
             raise
         item: Item
         try:
@@ -351,7 +352,7 @@ class Crafter:
         try:
             result = self.evaluate_item(item)
         except:
-            print("Failed to evaluate crafting step")
+            print(f"Failed to evaluate crafting step {self.step_index + 1}")
             raise
         return result
 
@@ -392,7 +393,6 @@ class Crafter:
 
         step = self.recipe.config[self.step_index]
         print(f"Step {self.step_index+1}: {step.method!r}")
-
 
         crafter_method = _find_method(self.crafter_methods, step.method)
         if crafter_method is None:

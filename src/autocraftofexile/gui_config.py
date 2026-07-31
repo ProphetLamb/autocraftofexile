@@ -38,9 +38,11 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
             data = json.load(f)
 
         config = GuiConfig.from_dict(data)
-        print("Successfully loaded gui config")
-        print(f"Start hotkey {config.start_hotkey}")
-        print(f"Stop hotkey {config.stop_hotkey}")
+        print(
+            "Successfully loaded gui config\n",
+            f" Start hotkey {config.start_hotkey}\n",
+            f" Stop hotkey {config.stop_hotkey}\n",
+        )
         return config
 
     except FileNotFoundError:

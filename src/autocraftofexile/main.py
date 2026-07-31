@@ -49,7 +49,7 @@ def main(
     recipe = load_recipe(recipe_file)
 
     r = repr_recipe(recipe, poecd)
-    print("\n"+r+"\n\n")
+    print("\n"+r+"\n")
     logging.info(r)
     recipe_errors = validate_recipe(
         recipe,
@@ -70,8 +70,9 @@ def main(
 
     def sigint(signal, frame):
         del signal, frame
-        logging.warn("SIGINT received: terminating worker")
+        logging.warning("SIGINT received: terminating worker")
         worker.exit()
+        logging.debug("done autocraftofexile")
         logging.shutdown()
         sys.exit(-1)
     signal.signal(signal.SIGINT, sigint)
