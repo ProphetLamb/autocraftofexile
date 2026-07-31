@@ -24,10 +24,10 @@ _DAMAGE_RANGE_RE = re.compile(
 
 def repr_condition(cond: RecipeCondition, poecd: PoeCd):
     if not cond.id.isdigit():
-        return f"{cond.id}({cond.treshold or ""}..{cond.max or ""})"
+        return f"'{cond.id}({cond.treshold or ""}..{cond.max or ""})'"
     modifier = poecd.modifiers.get(cond.id)
     tier_suffix = f" tier>={cond.treshold}" if (cond.treshold or 0) > 1 else ""
-    return f"{modifier.name_modifier}{tier_suffix}" if modifier != None else f"#{cond.id}{tier_suffix}"
+    return f"'{modifier.name_modifier}{tier_suffix}'" if modifier != None else f"'#{cond.id}{tier_suffix}'"
 
 
 def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep=", "):
@@ -42,7 +42,7 @@ def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep=", "):
     else:
         s += f"At LEAST {filter_.treshold} OF" if operator != "not" else f"FEWER THAN {filter_.treshold} OF"
     s += "(" + filter_sep.join(
-        "[" + repr_condition(cond, poecd) + "]"
+        repr_condition(cond, poecd)
         for cond in filter_.conds
     ) + ")"
     return s

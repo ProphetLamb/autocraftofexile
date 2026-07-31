@@ -9,10 +9,10 @@ import typer
 
 from autocraftofexile import LOG_FILE, POECD_FILE
 from autocraftofexile.rules import DEFAULT_RULES
-from .item_match_context import repr_recipe
 
 from .crafting import DEFAULT_CRAFTER_METHODS, CraftingOptions, CraftingWorker
 from .gui_config import load_gui_config
+from .item_match_context import repr_recipe
 from .poecd_loader import load_poecd_data
 from .recipe_loader import load_recipe, validate_recipe
 
@@ -49,17 +49,17 @@ def main(
     recipe = load_recipe(recipe_file)
 
     r = repr_recipe(recipe, poecd)
-    print("\n"+r+"\n")
+    typer.echo("\n" + r + "\n")
     logging.info(r)
     recipe_errors = validate_recipe(
         recipe,
         poecd,
-        filter_logic_types=set(["and", "or", "not"]),
+        filter_logic_types={"and", "or", "not"},
         modifier_rules=DEFAULT_RULES,
-        crafting_methods=DEFAULT_CRAFTER_METHODS
+        crafting_methods=DEFAULT_CRAFTER_METHODS,
     )
     for error in recipe_errors:
-        print(error)
+        typer.echo(error)
     if recipe_errors:
         return
 

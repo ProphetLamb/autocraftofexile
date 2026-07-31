@@ -1,25 +1,24 @@
 from __future__ import annotations
-from asyncio import CancelledError
 
-import pywinctl as pwc
 import logging
 import random
 import threading
 import time
 from abc import ABC, abstractmethod
+from asyncio import CancelledError
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Iterable, Mapping
 
 import keyboard
 import pyautogui
 import pyperclip
 import pytweening
-
-from .item_match_context import repr_condition
+import pywinctl as pwc
+import typer
 
 from .cancellation_token import CancellationToken, CancellationTokenSource
-
+from .item_match_context import repr_condition
 from .item_matcher import ItemMatcher, ItemMatchResult
 from .item_parser import parse_item
 from .models.gui_config import Coordinates, GuiConfig
@@ -136,11 +135,11 @@ class CraftingWorker:
         except CancelledError:
             message = "Crafter stopped"
             logging.exception(message)
-            print(message)
+            typer.echo(message)
         except Exception:
             message = "Crafter terminated unexpectedly"
             logging.exception(message)
-            print(message)
+            typer.echo(message)
 
         finally:
             with self._thread_lock:
@@ -154,8 +153,7 @@ class CraftingWorker:
                     self._exit.cancel()
 
         if not self.is_exit_requested:
-            print(
-                f"Press {self.config.start_hotkey} to start crafting again")
+            typer.echo(f"Press {self.config.start_hotkey} to start crafting again")
 
 
 @dataclass(slots=True, frozen=True)
@@ -239,7 +237,6 @@ class CrafterMethod(ABC):
         Returns:
             bool: `True` if the item changed, otherwise; `False`
         """
-        pass
 
 
 class CrafterMethodCheck(CrafterMethod):
@@ -317,6 +314,7 @@ class Crafter:
     step_index: int = 0
     crafter_methods: tuple[CrafterMethod, ...]
     _cached_item: Item | None
+    _cached_text: str | None
     _cached_coords: Coordinates | None
     _stopping_token: CancellationToken
 
@@ -328,6 +326,7 @@ class Crafter:
         self.step_index = step_index
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
         self._cached_item = None
+        self._cached_text = None
         self._cached_coords = None
         self._stopping_token = stopping_token
 
@@ -335,24 +334,24 @@ class Crafter:
         try:
             self._ensure_window_focus()
         except:
-            print("Failed to focus Path of Exile")
+            typer.echo("Failed to focus Path of Exile")
             raise
         try:
             self._invoke_step()
         except:
-            print(f"Failed to invoke crafting step {self.step_index + 1}")
+            typer.echo(f"Failed to invoke crafting step {self.step_index + 1}")
             raise
         item: Item
         try:
             item = self._get_item()
         except:
-            print("Invalid item copied by CTRL+ALT+C")
+            typer.echo("Invalid item copied by CTRL+ALT+C")
             raise
         result: CraftStepResult
         try:
             result = self.evaluate_item(item)
         except:
-            print(f"Failed to evaluate crafting step {self.step_index + 1}")
+            typer.echo(f"Failed to evaluate crafting step {self.step_index + 1}")
             raise
         return result
 
@@ -377,6 +376,15 @@ class Crafter:
             )
         pyperclip.copy('')
 
+        if self._cached_text == text:
+            logging.debug(
+                "item remain unchanged by the crafting method texts are equal %s\n\n%s",
+                self._cached_text,
+                text,
+            )
+            assert self._cached_item
+            return self._cached_item
+        self._cached_text = text
         item = parse_item(text)
         self._cached_item = item
         logging.debug("done get item")
@@ -392,7 +400,7 @@ class Crafter:
             )
 
         step = self.recipe.config[self.step_index]
-        print(f"Step {self.step_index+1}: {step.method!r}")
+        typer.echo(f"Step {self.step_index + 1}: {step.method!r}")
 
         crafter_method = _find_method(self.crafter_methods, step.method)
         if crafter_method is None:
@@ -401,21 +409,26 @@ class Crafter:
                 f"{step.method!r}"
             )
 
+        cached_item = self._cached_item
         item_changed = crafter_method.invoke(self)
         if item_changed:
-            cached_item = self._cached_item
-            self._cached_item = None
-            item = self._get_item()
-            if item == cached_item:
-                logging.warn("item has not changed due to the crafting method=%s item=%s", repr(
-                    crafter_method), repr(item))
-                print("Item has not changed due to the crafting method")
+            self._ensure_item_changed(cached_item)
 
         logging.debug(
             "done invoke step %d using method %r",
             self.step_index,
             repr(step.method),
         )
+
+    def _ensure_item_changed(self, cached_item):
+        item = self._get_item()
+        if cached_item == item:
+            message = "Crafting method unexpectedly left the item unchanged "
+            logging.warning(message)
+            typer.echo(message)
+            raise ValueError(message)
+        else:
+            self._cached_item = None
 
     def evaluate_item(self, item: Item) -> CraftStepResult:
         logging.debug("begin evaluating item %s", repr(item))
@@ -435,7 +448,7 @@ class Crafter:
             return self._goto_step(result, step.actions.fail, step.actions.fail_route)
 
     def _goto_step(self, match: ItemMatchResult, action: str, route: str | None) -> CraftStepResult:
-        logging.debug("begin goto step %s %s", action, route)
+        logging.debug("begin goto step action=%s route=%s", action, route)
 
         action = action.casefold()
         if action == 'loop':
@@ -457,12 +470,13 @@ class Crafter:
 
         done = self.step_index >= len(self.recipe.config)
         if done:
-            print("Done")
+            typer.echo("Done")
         else:
-            print(
-                f"{'Success' if match.success else 'Failed'} {action} {route or ''}")
+            typer.echo(
+                f"{'Success' if match.success else 'Failed'} {action} {route or ''}"
+            )
         if not match.success:
-            print(
+            typer.echo(
                 f"Conditions failed {', '.join(repr_condition(x, self.poecd) for x in match.failed)}"
             )
         logging.debug("done goto step")

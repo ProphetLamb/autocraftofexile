@@ -1,11 +1,12 @@
 import json
 import logging
+import time
 from dataclasses import asdict
 from os import PathLike
-import time
 
 import keyboard
 import pyautogui
+import typer
 
 from autocraftofexile import GUI_CONFIG_FILE
 
@@ -14,19 +15,18 @@ from .models.gui_config import Coordinates, GuiConfig
 
 def prompt_coordinates(name: str) -> Coordinates:
     time.sleep(0.1)
-    print()
-    input(f"Move mouse to the {name} and press ENTER.")
+    typer.echo()
+    typer.prompt(f"Move mouse to the {name} and press ENTER.")
     x, y = pyautogui.position()
-    print(f"{name}: {x}, {y}")
+    typer.echo(f"{name}: {x}, {y}")
     return Coordinates(x, y)
 
 
 def prompt_hotkey(name: str) -> str:
     time.sleep(0.1)
-    print()
-    print(f"Press the {name} hotkey.")
+    typer.echo(f"\nPress the {name} hotkey.")
     hotkey = keyboard.read_hotkey(suppress=False)
-    print(f"{name} hotkey: {hotkey}")
+    typer.echo(f"{name} hotkey: {hotkey}")
     return hotkey
 
 
@@ -38,10 +38,10 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
             data = json.load(f)
 
         config = GuiConfig.from_dict(data)
-        print(
-            "Successfully loaded gui config\n",
-            f" Start hotkey {config.start_hotkey}\n",
-            f" Stop hotkey {config.stop_hotkey}\n",
+        typer.echo(
+            "Successfully loaded gui config\n"
+            f" Start hotkey {config.start_hotkey}\n"
+            f" Stop hotkey {config.stop_hotkey}\n"
         )
         return config
 
