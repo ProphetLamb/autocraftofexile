@@ -46,7 +46,8 @@ class ItemMatcher:
             elif operator == "or":
                 if result.success:
                     return result
-                result = rhs
+                result.success = rhs.success
+                result.merge(rhs)
             else:
                 raise ValueError(
                     f"Unsupported recipe filter type: {operator}"
