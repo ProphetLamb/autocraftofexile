@@ -1,4 +1,5 @@
 from __future__ import annotations
+from asyncio import CancelledError
 
 import pywinctl as pwc
 import logging
@@ -15,6 +16,8 @@ import pyautogui
 import pyperclip
 import pytweening
 
+from .cancellation_token import CancellationToken, CancellationTokenSource
+
 from .item_matcher import ItemMatcher, ItemMatchResult
 from .item_parser import parse_item
 from .models.gui_config import Coordinates, GuiConfig
@@ -29,12 +32,15 @@ class CraftingOptions:
 
 
 class CraftingWorker:
-    thread: threading.Thread | None
+    _stop: CancellationTokenSource
+    _exit: CancellationTokenSource
+    _thread: threading.Thread | None
     config: GuiConfig
     recipe: Recipe
     poecd: PoeCd
     options: CraftingOptions
     is_exit_requested: bool
+    is_running: bool
 
     def __init__(
         self,
@@ -43,15 +49,16 @@ class CraftingWorker:
         poecd: PoeCd,
         options: CraftingOptions
     ) -> None:
-        self._stop_event = threading.Event()
-        self._exit_event = threading.Event()
+        self._stop = CancellationTokenSource()
+        self._exit = CancellationTokenSource()
         self._thread_lock = threading.Lock()
-        self.thread = None
+        self._thread = None
         self.config = config
         self.recipe = recipe
         self.poecd = poecd
         self.options = options
         self.is_exit_requested = False
+        self.is_running = False
 
     def run(self) -> None:
         start_hotkey = keyboard.add_hotkey(
@@ -64,9 +71,7 @@ class CraftingWorker:
         )
 
         try:
-            # Keep the process alive and listen for hotkeys.
-            # The crafting thread is not started until _start() is called.
-            self._exit_event.wait()
+            self._exit.wait()
         finally:
             keyboard.remove_hotkey(start_hotkey)
             keyboard.remove_hotkey(stop_hotkey)
@@ -74,38 +79,40 @@ class CraftingWorker:
             self.stop()
 
             with self._thread_lock:
-                thread = self.thread
+                thread = self._thread
                 try:
                     if thread is not None and thread.is_alive():
                         thread.join()
                 finally:
-                    self._exit_event.clear()
+                    self._exit.reset()
 
     def start(self) -> None:
         with self._thread_lock:
-            if self.thread is not None and self.thread.is_alive():
+            if self._thread is not None and self._thread.is_alive():
                 return
 
-            self._stop_event.clear()
+            self._stop.reset()
 
-            self.thread = threading.Thread(
+            self._thread = threading.Thread(
                 target=self._main,
                 name="crafting-worker",
                 daemon=True,
             )
-            self.thread.start()
+            self._thread.start()
+            self.is_running = True
 
     def exit(self) -> None:
         self.is_exit_requested = True
         self.stop()
-        self._exit_event.wait()
+        if self.is_running:
+            self._exit.wait()
 
     def stop(self) -> None:
         with self._thread_lock:
-            thread = self.thread
+            thread = self._thread
 
             if thread is not None and thread.is_alive():
-                self._stop_event.set()
+                self._stop.cancel()
 
     def _main(self) -> None:
         current_thread = threading.current_thread()
@@ -115,31 +122,38 @@ class CraftingWorker:
                 self.config,
                 self.recipe,
                 self.poecd,
+                self._stop.token,
                 self.options
             )
 
-            while not self._stop_event.is_set():
+            while not self._stop.is_cancelled:
                 result = crafter.execute()
 
                 if result.done:
                     return
-
+        except CancelledError:
+            message = "Crafter stopped"
+            logging.exception(message)
+            print(message)
         except Exception:
             message = "Crafter terminated unexpectedly"
             logging.exception(message)
             print(message)
-            if not self.is_exit_requested:
-                print(f"Press {self.config.start_hotkey} to start crafting again")
 
         finally:
             with self._thread_lock:
+                self.is_running = False
                 # Avoid an old worker clearing a newer thread reference.
-                if self.thread is current_thread:
-                    self.thread = None
+                if self._thread is current_thread:
+                    self._thread = None
 
-                self._stop_event.clear()
+                self._stop.reset()
                 if self.is_exit_requested:
-                    self._exit_event.set()
+                    self._exit.cancel()
+
+        if not self.is_exit_requested:
+            print(
+                f"Press {self.config.start_hotkey} to start crafting again")
 
 
 @dataclass(slots=True, frozen=True)
@@ -290,8 +304,9 @@ class Crafter:
     crafter_methods: tuple[CrafterMethod, ...]
     _cached_item: Item | None
     _cached_coords: Coordinates | None
+    _stopping_token: CancellationToken
 
-    def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, options: CraftingOptions, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
+    def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, stopping_token: CancellationToken, options: CraftingOptions, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
         self.config = config
         self.recipe = recipe
         self.poecd = poecd
@@ -300,6 +315,7 @@ class Crafter:
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
         self._cached_item = None
         self._cached_coords = None
+        self._stopping_token = stopping_token
 
     def execute(self):
         try:
@@ -328,6 +344,7 @@ class Crafter:
 
     def _get_item(self) -> Item:
         logging.debug("begin get item")
+        self._stopping_token.throw_if_cancelled()
         if self._cached_item:
             logging.debug("end get item using cached item")
             return self._cached_item
@@ -353,6 +370,7 @@ class Crafter:
 
     def _invoke_step(self):
         logging.debug("begin invoke step %d", self.step_index)
+        self._stopping_token.throw_if_cancelled()
 
         if not 0 <= self.step_index < len(self.recipe.config):
             raise IndexError(
@@ -384,7 +402,8 @@ class Crafter:
             self._cached_item = None
             item = self._get_item()
             if item == cached_item:
-                logging.warn("item has not changed due to the crafting method=%s item=%s", repr(crafter_method), repr(item))
+                logging.warn("item has not changed due to the crafting method=%s item=%s", repr(
+                    crafter_method), repr(item))
                 print("Item has not changed due to the crafting method")
 
         logging.debug(
@@ -395,6 +414,7 @@ class Crafter:
 
     def evaluate_item(self, item: Item) -> CraftStepResult:
         logging.debug("begin evaluating item %s", repr(item))
+        self._stopping_token.throw_if_cancelled()
 
         step = self.recipe.config[self.step_index]
         if step.autopass:
@@ -459,6 +479,7 @@ class Crafter:
         return int(random.uniform(pos-4, pos+4))
 
     def move_to(self, coords: Coordinates):
+        self._stopping_token.throw_if_cancelled()
         if self._cached_coords == coords:
             return
         self._cached_coords = coords
@@ -470,13 +491,17 @@ class Crafter:
         )
 
     def left_click(self):
+        self._stopping_token.throw_if_cancelled()
         pyautogui.leftClick(duration=self._duration(1 / self.options.speed))
 
     def right_click(self):
+        self._stopping_token.throw_if_cancelled()
         pyautogui.rightClick(duration=self._duration(1 / self.options.speed))
 
     def hotkey(self, *keys: str):
-        pyautogui.hotkey(*keys, interval=self._duration(1 / 3 / self.options.speed))
+        self._stopping_token.throw_if_cancelled()
+        pyautogui.hotkey(
+            *keys, interval=self._duration(1 / 3 / self.options.speed))
 
 
 def _repr_condition(cond: RecipeCondition, poecd: PoeCd):

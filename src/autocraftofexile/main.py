@@ -1,3 +1,4 @@
+import atexit
 import logging
 import os
 import signal
@@ -40,6 +41,7 @@ def main(
         encoding='utf-8',
         level=logging.DEBUG
     )
+    atexit.register(logging.shutdown)
     logging.debug("begin autocraftofexile")
     poecd = load_poecd_data(poecd_data_file)
     recipe = load_recipe(recipe_file)
@@ -49,6 +51,9 @@ def main(
 
     def sigint(signal, frame):
         del signal, frame
+        logging.warn("SIGINT recived: terminating worker")
+        worker.exit()
+        logging.shutdown()
         sys.exit(-1)
     signal.signal(signal.SIGINT, sigint)
     worker.run()
