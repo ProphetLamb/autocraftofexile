@@ -474,6 +474,7 @@ class Crafter:
             raise ValueError("Path of Exile is not running")
         if poe != pwc.getActiveWindow():
             logging.info("Path of Exile is not focussed")
+            poe.activate(wait=True)
             self.move_to(self.config.showcase)
             self.right_click()
 

@@ -70,7 +70,7 @@ def main(
 
     def sigint(signal, frame):
         del signal, frame
-        logging.warn("SIGINT recived: terminating worker")
+        logging.warn("SIGINT received: terminating worker")
         worker.exit()
         logging.shutdown()
         sys.exit(-1)
