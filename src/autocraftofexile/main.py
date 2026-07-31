@@ -8,6 +8,7 @@ from typing import Annotated
 import typer
 
 from autocraftofexile import LOG_FILE, POECD_FILE
+from .item_match_context import repr_recipe
 
 from .crafting import CraftingOptions, CraftingWorker
 from .gui_config import load_gui_config
@@ -45,7 +46,13 @@ def main(
     logging.debug("begin autocraftofexile")
     poecd = load_poecd_data(poecd_data_file)
     recipe = load_recipe(recipe_file)
+
+    r = repr_recipe(recipe, poecd)
+    print("\n"+r+"\n\n")
+    logging.info(r)
+    
     config = load_gui_config(gui_file)
+
     worker = CraftingWorker(config, recipe, poecd,
                             CraftingOptions(speed or 20))
 

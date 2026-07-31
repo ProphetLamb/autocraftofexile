@@ -16,6 +16,8 @@ import pyautogui
 import pyperclip
 import pytweening
 
+from .item_match_context import repr_condition
+
 from .cancellation_token import CancellationToken, CancellationTokenSource
 
 from .item_matcher import ItemMatcher, ItemMatchResult
@@ -458,7 +460,7 @@ class Crafter:
                 f"{'Success' if match.success else 'Failed'} {action} {route or ''}")
         if not match.success:
             print(
-                f"Conditions failed {', '.join(_repr_condition(x, self.poecd) for x in match.failed)}"
+                f"Conditions failed {', '.join(repr_condition(x, self.poecd) for x in match.failed)}"
             )
         logging.debug("done goto step")
         return CraftStepResult(match, done)
@@ -502,10 +504,3 @@ class Crafter:
         self._stopping_token.throw_if_cancelled()
         pyautogui.hotkey(
             *keys, interval=self._duration(1 / 3 / self.options.speed))
-
-
-def _repr_condition(cond: RecipeCondition, poecd: PoeCd):
-    if cond.id.isdigit():
-        modifier = poecd.modifiers.get(cond.id)
-        return modifier.name_modifier if modifier != None else f"modifier #{cond.id}"
-    return cond.id
