@@ -25,7 +25,7 @@ from .item_parser import parse_item
 from .models.gui_config import Coordinates, GuiConfig
 from .models.item import Item
 from .models.poecd import PoeCd
-from .models.recipe import Recipe, RecipeCondition
+from .models.recipe import Recipe
 
 
 @dataclass
@@ -254,6 +254,17 @@ def _normalize_method(method: Iterable[str | None]) -> tuple[str | None, ...]:
     return tuple(part.casefold() if part else None for part in method)
 
 
+def _find_method(methods: Iterable[CrafterMethod], method: Iterable[str | None]):
+    method_signature = _normalize_method(method)
+    return next(
+        (
+            candidate
+            for candidate in methods
+            if candidate.method == method_signature
+        ),
+        None,
+    )
+
 class CrafterMethodCurrency(CrafterMethod):
     definition: CurrencyMethodDefinition
 
@@ -380,18 +391,10 @@ class Crafter:
             )
 
         step = self.recipe.config[self.step_index]
-        method_signature = _normalize_method(step.method)
-        print(f"Step {self.step_index+1}: {method_signature!r}")
+        print(f"Step {self.step_index+1}: {step.method!r}")
 
-        crafter_method = next(
-            (
-                candidate
-                for candidate in self.crafter_methods
-                if candidate.method == method_signature
-            ),
-            None,
-        )
 
+        crafter_method = _find_method(self.crafter_methods, step.method)
         if crafter_method is None:
             raise ValueError(
                 f"Unsupported crafting method at step {self.step_index}: "
@@ -411,7 +414,7 @@ class Crafter:
         logging.debug(
             "done invoke step %d using method %r",
             self.step_index,
-            method_signature,
+            repr(step.method),
         )
 
     def evaluate_item(self, item: Item) -> CraftStepResult:
