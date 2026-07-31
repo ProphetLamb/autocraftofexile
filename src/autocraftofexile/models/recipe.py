@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Mapping, Self
+from typing import Any, Self
 
 
 @dataclass(slots=True, frozen=True)
@@ -98,7 +99,9 @@ class RecipeData:
             is_catalyst=data.get("is_catalyst", 0),
             is_notable=data.get("is_notable", 0),
             unique_notable=data.get("unique_notable", 0),
-            iaffixes=tuple(ItemAffix.from_dict(value) for value in data.get("iaffixes", ())),
+            iaffixes=tuple(
+                ItemAffix.from_dict(value) for value in data.get("iaffixes", ())
+            ),
             meta_flags=MappingProxyType(data.get("meta_flags", {})),
             imprint=data.get("imprint"),
             enchant=data.get("enchant", ""),
@@ -130,8 +133,8 @@ class RecipeSettings:
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             bgroup=data.get("bgroup", 0),
-            base=data.get("base", ''),
-            bitem=data.get("bitem", ''),
+            base=data.get("base", ""),
+            bitem=data.get("bitem", ""),
             ilvl=data.get("ilvl", 0),
             rarity=data.get("rarity", "Normal"),
             influences=tuple(data.get("influences", [])),
@@ -172,8 +175,12 @@ class RecipeFilter:
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             type=str(data.get("type", "")),
-            treshold=int(data["treshold"]) if "treshold" in data and data["treshold"] is not None else None,
-            conds=tuple(RecipeCondition.from_dict(value) for value in data.get("conds", ())),
+            treshold=int(data["treshold"])
+            if "treshold" in data and data["treshold"] is not None
+            else None,
+            conds=tuple(
+                RecipeCondition.from_dict(value) for value in data.get("conds", ())
+            ),
         )
 
 
@@ -210,7 +217,11 @@ class RecipeStep:
         autopass = bool(data.get("autopass", False))
 
         filters_raw = data.get("filters")
-        filters = tuple(RecipeFilter.from_dict(value) for value in filters_raw) if filters_raw is not None else None
+        filters = (
+            tuple(RecipeFilter.from_dict(value) for value in filters_raw)
+            if filters_raw is not None
+            else None
+        )
 
         vfilter_raw = data.get("vfilter")
         vfilter = tuple(vfilter_raw) if vfilter_raw is not None else None

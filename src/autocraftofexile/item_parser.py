@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import logging
 import re
+from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import replace
 from types import MappingProxyType
-from typing import Iterable, List
-
-from .models.recipe import AffixGroups
 
 from .models.item import (
     Item,
@@ -17,16 +15,17 @@ from .models.item import (
     ItemRequirements,
     SocketLinks,
 )
+from .models.recipe import AffixGroups
 
 _SEPARATOR_RE = re.compile(r"^-{4,}$")
 _FIELD_RE = re.compile(r"^(?P<name>[^:]+):\s*(?P<value>.*)$")
 _MODIFIER_RE = re.compile(
-    r'^\{\s*'
-    r'(?P<slot>Implicit|Prefix|Suffix)\s+Modifier'
+    r"^\{\s*"
+    r"(?P<slot>Implicit|Prefix|Suffix)\s+Modifier"
     r'(?:\s+"(?P<name>[^"]+)")?'
-    r'(?:\s+\(Tier:\s*(?P<tier>\d+)\))?'
-    r'(?:\s+[—-]\s+(?P<attributes>.*?))?'
-    r'\s*\}$',
+    r"(?:\s+\(Tier:\s*(?P<tier>\d+)\))?"
+    r"(?:\s+[—-]\s+(?P<attributes>.*?))?"
+    r"\s*\}$",
     re.IGNORECASE,
 )
 _PROPERTY_NAMES = {
@@ -44,7 +43,9 @@ class RarityItemDetails(ABC):
     max_affix: AffixGroups | None = None
 
     @abstractmethod
-    def parse_identifier(self, item_class: str, identity_lines: List[str]) -> ItemIdentifier:
+    def parse_identifier(
+        self, item_class: str, identity_lines: list[str]
+    ) -> ItemIdentifier:
         pass
 
 
@@ -52,7 +53,7 @@ class NormalItemDetails(RarityItemDetails):
     rarity = "Normal"
     max_affix = AffixGroups(0, 0)
 
-    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+    def parse_identifier(self, item_class: str, identity_lines: list[str]):
         if len(identity_lines) < 1:
             raise ValueError("Expected item name after Rarity")
         return ItemIdentifier(
@@ -67,7 +68,7 @@ class MagicItemDetails(RarityItemDetails):
     rarity = "Magic"
     max_affix = AffixGroups(1, 1)
 
-    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+    def parse_identifier(self, item_class: str, identity_lines: list[str]):
         if len(identity_lines) < 1:
             raise ValueError("Expected item name after Rarity")
         return ItemIdentifier(
@@ -77,19 +78,20 @@ class MagicItemDetails(RarityItemDetails):
             # Unleashed Lathi of Steadiness, Lathi of Steadiness, Unleashed Lathi
             base_item=(
                 identity_lines[0][:suffix_index]
-                if (suffix_index := identity_lines[0].find(' of ')) == -1
+                if (suffix_index := identity_lines[0].find(" of ")) == -1
                 else identity_lines[0]
-            ).split(' ', 2).pop(),
+            )
+            .split(" ", 2)
+            .pop(),
         )
 
 
 class RareItemDetails(RarityItemDetails):
     rarity = "Rare"
 
-    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+    def parse_identifier(self, item_class: str, identity_lines: list[str]):
         if len(identity_lines) < 2:
-            raise ValueError(
-                "Expected item name and base item after Rarity")
+            raise ValueError("Expected item name and base item after Rarity")
         return ItemIdentifier(
             item_class=item_class,
             rarity="Rare",
@@ -101,10 +103,9 @@ class RareItemDetails(RarityItemDetails):
 class UniqueItemDetails(RareItemDetails):
     rarity = "Unique"
 
-    def parse_identifier(self, item_class: str, identity_lines: List[str]):
+    def parse_identifier(self, item_class: str, identity_lines: list[str]):
         if len(identity_lines) < 2:
-            raise ValueError(
-                "Expected item name and base item after Rarity")
+            raise ValueError("Expected item name and base item after Rarity")
         return ItemIdentifier(
             item_class=item_class,
             rarity="Unique",
@@ -117,16 +118,15 @@ ITEM_DETAILS: tuple[RarityItemDetails, ...] = (
     NormalItemDetails(),
     MagicItemDetails(),
     RareItemDetails(),
-    UniqueItemDetails()
+    UniqueItemDetails(),
 )
-ITEM_DETAIL_BY_RARITY = MappingProxyType({
-    parser.rarity.casefold(): parser
-    for parser in ITEM_DETAILS
-})
+ITEM_DETAIL_BY_RARITY = MappingProxyType(
+    {parser.rarity.casefold(): parser for parser in ITEM_DETAILS}
+)
 
 
 def parse_item(text: str) -> Item:
-    logging.debug('begin parse item text=%s', text)
+    logging.debug("begin parse item text=%s", text)
     lines = [line.strip() for line in text.replace("\r\n", "\n").split("\n")]
     lines = [line for line in lines if line]
     if not lines:
@@ -137,7 +137,8 @@ def parse_item(text: str) -> Item:
     rarity = _required_field(lines, "Rarity")
     item_class = _required_field(lines, "Item Class")
     identity_lines = [
-        line for line in lines[rarity_index + 1: identity_end]
+        line
+        for line in lines[rarity_index + 1 : identity_end]
         if not _FIELD_RE.match(line)
     ]
     identifier_parser = ITEM_DETAIL_BY_RARITY.get(rarity.casefold())
@@ -150,7 +151,7 @@ def parse_item(text: str) -> Item:
         raise ValueError("Expected base category after item identifier")
     base = lines[base_index]
     properties_end = _next_separator(lines, base_index + 1)
-    properties = _parse_item_properties(lines[base_index + 1: properties_end])
+    properties = _parse_item_properties(lines[base_index + 1 : properties_end])
 
     requirements = ItemRequirements(
         level=_optional_int_field(lines, "Level"),
@@ -161,9 +162,13 @@ def parse_item(text: str) -> Item:
 
     sockets_text = _optional_field(lines, "Sockets")
     sockets = tuple(
-        [SocketLinks(tuple(socket for socket in group.split("-") if socket))
-         for group in sockets_text.split() if group]
-        if sockets_text else []
+        [
+            SocketLinks(tuple(socket for socket in group.split("-") if socket))
+            for group in sockets_text.split()
+            if group
+        ]
+        if sockets_text
+        else []
     )
 
     item_level = int(_required_field(lines, "Item Level"))
@@ -172,7 +177,7 @@ def parse_item(text: str) -> Item:
         (i for i, line in enumerate(lines) if _SEPARATOR_RE.fullmatch(line)),
         default=-1,
     )
-    status = tuple(lines[last_separator + 1:])
+    status = tuple(lines[last_separator + 1 :])
 
     item = Item(
         ident=ident,
@@ -184,7 +189,7 @@ def parse_item(text: str) -> Item:
         modifiers=modifiers,
         status=status,
     )
-    logging.debug('done parse item item=%s', repr(item))
+    logging.debug("done parse item item=%s", repr(item))
     return item
 
 
@@ -215,9 +220,7 @@ def _parse_item_modifiers(
         if current is None:
             return
 
-        modifiers.append(
-            replace(current, text=tuple(current_text))
-        )
+        modifiers.append(replace(current, text=tuple(current_text)))
         current = None
         current_text = []
 
@@ -245,7 +248,8 @@ def parse_item_modifier_header(text: str) -> ItemModifier:
         tier=int(match.group("tier") or 0),
         attributes=tuple(
             [value.strip() for value in attributes_text.split(",") if value.strip()]
-            if attributes_text else []
+            if attributes_text
+            else []
         ),
         text=(),
     )
@@ -270,7 +274,7 @@ def _optional_field(lines: Iterable[str], name: str) -> str | None:
     prefix = f"{name}:"
     for line in lines:
         if line.startswith(prefix):
-            return line[len(prefix):].strip()
+            return line[len(prefix) :].strip()
     return None
 
 
@@ -284,7 +288,7 @@ def _optional_int_field(lines: Iterable[str], name: str) -> int:
     return int(match.group())
 
 
-def _next_separator(lines: List[str], start: int) -> int:
+def _next_separator(lines: list[str], start: int) -> int:
     for index in range(start, len(lines)):
         if _SEPARATOR_RE.fullmatch(lines[index]):
             return index

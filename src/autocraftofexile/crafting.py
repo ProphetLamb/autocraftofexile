@@ -44,11 +44,7 @@ class CraftingWorker:
     is_running: bool
 
     def __init__(
-        self,
-        config: GuiConfig,
-        recipe: Recipe,
-        poecd: PoeCd,
-        options: CraftingOptions
+        self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, options: CraftingOptions
     ) -> None:
         self._stop = CancellationTokenSource()
         self._exit = CancellationTokenSource()
@@ -120,11 +116,7 @@ class CraftingWorker:
 
         try:
             crafter = Crafter(
-                self.config,
-                self.recipe,
-                self.poecd,
-                self._stop.token,
-                self.options
+                self.config, self.recipe, self.poecd, self._stop.token, self.options
             )
 
             while not self._stop.is_cancelled:
@@ -221,10 +213,7 @@ CURRENCY_METHODS: tuple[CurrencyMethodDefinition, ...] = (
 
 CURRENCY_METHOD_BY_SIGNATURE: Mapping[
     tuple[str | None, ...], CurrencyMethodDefinition
-] = MappingProxyType({
-    definition.method: definition
-    for definition in CURRENCY_METHODS
-})
+] = MappingProxyType({definition.method: definition for definition in CURRENCY_METHODS})
 
 
 class CrafterMethod(ABC):
@@ -240,7 +229,7 @@ class CrafterMethod(ABC):
 
 
 class CrafterMethodCheck(CrafterMethod):
-    method = ("check", )
+    method = ("check",)
 
     def invoke(self, crafter: Crafter) -> bool:
         del crafter
@@ -254,11 +243,7 @@ def _normalize_method(method: Iterable[str | None]) -> tuple[str | None, ...]:
 def _find_method(methods: Iterable[CrafterMethod], method: Iterable[str | None]):
     method_signature = _normalize_method(method)
     return next(
-        (
-            candidate
-            for candidate in methods
-            if candidate.method == method_signature
-        ),
+        (candidate for candidate in methods if candidate.method == method_signature),
         None,
     )
 
@@ -269,8 +254,7 @@ class CrafterMethodCurrency(CrafterMethod):
     def __init__(self, definition: CurrencyMethodDefinition) -> None:
         super().__init__()
         self.definition = definition
-        self.method = _normalize_method(
-            definition.method)
+        self.method = _normalize_method(definition.method)
 
     def invoke(self, crafter: Crafter):
         coords = self._get_currency_coordinates(crafter.config)
@@ -302,7 +286,7 @@ class CrafterMethodCurrency(CrafterMethod):
 
 DEFAULT_CRAFTER_METHODS: tuple[CrafterMethod, ...] = (
     CrafterMethodCheck(),
-    *[CrafterMethodCurrency(method) for method in CURRENCY_METHODS]
+    *[CrafterMethodCurrency(method) for method in CURRENCY_METHODS],
 )
 
 
@@ -318,7 +302,17 @@ class Crafter:
     _cached_coords: Coordinates | None
     _stopping_token: CancellationToken
 
-    def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, stopping_token: CancellationToken, options: CraftingOptions, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
+    def __init__(
+        self,
+        config: GuiConfig,
+        recipe: Recipe,
+        poecd: PoeCd,
+        stopping_token: CancellationToken,
+        options: CraftingOptions,
+        *,
+        step_index: int = 0,
+        crafter_methods: tuple[CrafterMethod, ...] | None = None,
+    ):
         self.config = config
         self.recipe = recipe
         self.poecd = poecd
@@ -371,10 +365,8 @@ class Crafter:
         text = pyperclip.paste()
 
         if not text.strip():
-            raise ValueError(
-                "The clipboard is empty after copying the showcase item"
-            )
-        pyperclip.copy('')
+            raise ValueError("The clipboard is empty after copying the showcase item")
+        pyperclip.copy("")
 
         if self._cached_text == text:
             logging.debug(
@@ -395,9 +387,7 @@ class Crafter:
         self._stopping_token.throw_if_cancelled()
 
         if not 0 <= self.step_index < len(self.recipe.config):
-            raise IndexError(
-                f"Recipe step index out of range: {self.step_index}"
-            )
+            raise IndexError(f"Recipe step index out of range: {self.step_index}")
 
         step = self.recipe.config[self.step_index]
         typer.echo(f"Step {self.step_index + 1}: {step.method!r}")
@@ -437,7 +427,9 @@ class Crafter:
         step = self.recipe.config[self.step_index]
         if step.autopass:
             logging.debug("done evaluating step autopass")
-            return self._goto_step(ItemMatchResult(True), step.actions.win, step.actions.win_route)
+            return self._goto_step(
+                ItemMatchResult(True), step.actions.win, step.actions.win_route
+            )
         matcher = ItemMatcher(step, self.recipe.data, self.poecd)
         result = matcher.evaluate(item)
 
@@ -447,19 +439,21 @@ class Crafter:
         else:
             return self._goto_step(result, step.actions.fail, step.actions.fail_route)
 
-    def _goto_step(self, match: ItemMatchResult, action: str, route: str | None) -> CraftStepResult:
+    def _goto_step(
+        self, match: ItemMatchResult, action: str, route: str | None
+    ) -> CraftStepResult:
         logging.debug("begin goto step action=%s route=%s", action, route)
 
         action = action.casefold()
-        if action == 'loop':
+        if action == "loop":
             pass
-        elif action == 'restart':
+        elif action == "restart":
             self.step_index = 0
-        elif action == 'next':
+        elif action == "next":
             self.step_index += 1
-        elif action == 'end':
+        elif action == "end":
             self.step_index = len(self.recipe.config)
-        elif action == 'step':
+        elif action == "step":
             if route == None:
                 raise ValueError(
                     "Recipe step with the `step` action must specify a route"
@@ -493,10 +487,10 @@ class Crafter:
             self.right_click()
 
     def _duration(self, duration: float) -> float:
-        return random.uniform(duration*0.85, duration*1.15)
+        return random.uniform(duration * 0.85, duration * 1.15)
 
     def _position(self, pos: int) -> int:
-        return int(random.uniform(pos-4, pos+4))
+        return int(random.uniform(pos - 4, pos + 4))
 
     def move_to(self, coords: Coordinates):
         self._stopping_token.throw_if_cancelled()
@@ -507,7 +501,7 @@ class Crafter:
             self._position(coords.x),
             self._position(coords.y),
             duration=self._duration(5 / self.options.speed),
-            tween=pytweening.easeInOutElastic
+            tween=pytweening.easeInOutElastic,
         )
 
     def left_click(self):
@@ -520,5 +514,4 @@ class Crafter:
 
     def hotkey(self, *keys: str):
         self._stopping_token.throw_if_cancelled()
-        pyautogui.hotkey(
-            *keys, interval=self._duration(1 / 3 / self.options.speed))
+        pyautogui.hotkey(*keys, interval=self._duration(1 / 3 / self.options.speed))

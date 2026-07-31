@@ -1,7 +1,7 @@
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable
 
 from .item_match_context import (
     ItemMatchContext,
@@ -46,21 +46,17 @@ class Rule(ABC):
                 item_modifier, ModifierMatchResult()
             ).attributes.add(condition)
         for item_modifier in text_modifiers:
-            result.modifiers.setdefault(
-                item_modifier, ModifierMatchResult()
-            ).text.add(condition)
+            result.modifiers.setdefault(item_modifier, ModifierMatchResult()).text.add(
+                condition
+            )
         return result
 
 
 @dataclass(slots=True, frozen=True)
 class NamedRuleResult:
     value: float
-    attributes: set[ItemModifier] = field(
-        default_factory=set[ItemModifier]
-    )
-    text: set[ItemModifier] = field(
-        default_factory=set[ItemModifier]
-    )
+    attributes: set[ItemModifier] = field(default_factory=set[ItemModifier])
+    text: set[ItemModifier] = field(default_factory=set[ItemModifier])
 
 
 class NamedRule(Rule, ABC):
@@ -115,11 +111,10 @@ class OpenSuffixRule(NamedRule):
 class CountSlotRule(NamedRule):
     slots: frozenset[str]
 
-    def match(
-        self, context: ItemMatchContext
-    ) -> NamedRuleResult:
+    def match(self, context: ItemMatchContext) -> NamedRuleResult:
         modifiers = {
-            modifier for modifier in context.item.modifiers
+            modifier
+            for modifier in context.item.modifiers
             if modifier.slot.casefold() in self.slots
         }
         return NamedRuleResult(float(len(modifiers)))
@@ -144,16 +139,13 @@ class ModifierAttributeRule(NamedRule):
     attribute: str
     negate = False
 
-    def match(
-        self, context: ItemMatchContext
-    ) -> NamedRuleResult:
+    def match(self, context: ItemMatchContext) -> NamedRuleResult:
         expected = self.attribute.casefold()
         modifiers: set[ItemModifier] = set()
         for modifier in context.item.modifiers:
             if modifier.slot.casefold() not in {"prefix", "suffix"}:
                 continue
-            contains = any(
-                a.casefold() == expected for a in modifier.attributes)
+            contains = any(a.casefold() == expected for a in modifier.attributes)
             if (not contains) if self.negate else contains:
                 modifiers.add(modifier)
         return NamedRuleResult(float(len(modifiers)), attributes=modifiers)
@@ -184,9 +176,7 @@ class ModifierNonCasterRule(ModifierAttributeRule):
 class InfluencedRule(NamedRule):
     slots: frozenset[str]
 
-    def match(
-        self, context: ItemMatchContext
-    ) -> NamedRuleResult:
+    def match(self, context: ItemMatchContext) -> NamedRuleResult:
         influenced_names = {
             name.casefold()
             for influence in context.influence_names
@@ -220,14 +210,12 @@ class TemplateRule(NamedRule):
     affected: frozenset[str]
 
     @abstractmethod
-    def templates(self, context: ItemMatchContext) -> tuple[
-        tuple[re.Pattern[str], frozenset[str]], ...
-    ]:
+    def templates(
+        self, context: ItemMatchContext
+    ) -> tuple[tuple[re.Pattern[str], frozenset[str]], ...]:
         pass
 
-    def match(
-        self, context: ItemMatchContext
-    ) -> NamedRuleResult:
+    def match(self, context: ItemMatchContext) -> NamedRuleResult:
         total = 0.0
         modifiers: set[ItemModifier] = set()
         for item_modifier, lines in zip(
@@ -236,15 +224,15 @@ class TemplateRule(NamedRule):
             strict=True,
         ):
             for line in lines:
-                contribution = self._line_contribution(
-                    line, self.templates(context))
+                contribution = self._line_contribution(line, self.templates(context))
                 if contribution is not None:
                     total += contribution
                     modifiers.add(item_modifier)
         return NamedRuleResult(total, text=modifiers)
 
     def _line_contribution(
-        self, line: str,
+        self,
+        line: str,
         templates: tuple[tuple[re.Pattern[str], frozenset[str]], ...],
     ) -> float | None:
         for pattern, affected in templates:
@@ -258,12 +246,16 @@ class TemplateRule(NamedRule):
 
 
 class ResistanceRule(TemplateRule):
-    def templates(self, context: ItemMatchContext) -> tuple[tuple[re.Pattern[str], frozenset[str]], ...]:
+    def templates(
+        self, context: ItemMatchContext
+    ) -> tuple[tuple[re.Pattern[str], frozenset[str]], ...]:
         return context.resistance_templates
 
 
 class AttributeRule(TemplateRule):
-    def templates(self, context: ItemMatchContext) -> tuple[tuple[re.Pattern[str], frozenset[str]], ...]:
+    def templates(
+        self, context: ItemMatchContext
+    ) -> tuple[tuple[re.Pattern[str], frozenset[str]], ...]:
         return context.attribute_templates
 
 
@@ -322,8 +314,10 @@ class ModifierPresentRule(Rule):
         return condition.id.isdigit()
 
     def evaluate(
-        self, condition: RecipeCondition,
-        context: ItemMatchContext, filter_: RecipeFilter,
+        self,
+        condition: RecipeCondition,
+        context: ItemMatchContext,
+        filter_: RecipeFilter,
     ) -> ItemMatchResult:
         poecd_modifier = context.poecd.modifiers.get(condition.id)
         if poecd_modifier is None:
@@ -343,9 +337,7 @@ class ModifierPresentRule(Rule):
             if (filter_.treshold is None or item_modifier.tier >= filter_.treshold)
             and self._matches(patterns, text, condition)
         }
-        return self.result(
-            bool(modifiers), condition, text_modifiers=modifiers
-        )
+        return self.result(bool(modifiers), condition, text_modifiers=modifiers)
 
     @staticmethod
     def _matches(
@@ -381,9 +373,7 @@ class TotalDpsRule(ItemPropertyRule):
 
     def value(self, context: ItemMatchContext) -> float:
         average_hit = (
-            context.physical_damage
-            + context.elemental_damage
-            + context.chaos_damage
+            context.physical_damage + context.elemental_damage + context.chaos_damage
         )
         return average_hit * context.attack_rate
 
@@ -434,7 +424,10 @@ class ItemSocketColorRule(ItemPropertyRule, ABC):
     color: str
 
     def value(self, context: ItemMatchContext) -> float:
-        return sum(sum(1 for color in links.sockets if color.casefold() == self.color) for links in context.item.sockets)
+        return sum(
+            sum(1 for color in links.sockets if color.casefold() == self.color)
+            for links in context.item.sockets
+        )
 
 
 class ItemSocketWhiteRule(ItemSocketColorRule):
@@ -466,7 +459,10 @@ class ItemLinkColorRule(ItemPropertyRule, ABC):
     color: str
 
     def value(self, context: ItemMatchContext) -> float:
-        return max(sum(1 for color in links.sockets if color.casefold() == self.color) for links in context.item.sockets)
+        return max(
+            sum(1 for color in links.sockets if color.casefold() == self.color)
+            for links in context.item.sockets
+        )
 
 
 class ItemLinkWhiteRule(ItemLinkColorRule):

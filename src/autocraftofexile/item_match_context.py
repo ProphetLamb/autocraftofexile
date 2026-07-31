@@ -1,33 +1,39 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable, Collection
 from dataclasses import dataclass, field
-from typing import Callable, Collection, List
 
+from .item_parser import ITEM_DETAIL_BY_RARITY, RarityItemDetails
 from .models.item import Item, ItemModifier
 from .models.poecd import PoeCd
 from .models.recipe import Recipe, RecipeCondition, RecipeData, RecipeFilter, RecipeStep
-from .item_parser import ITEM_DETAIL_BY_RARITY, RarityItemDetails
 
 RecipeConditions = set[RecipeCondition]
 
 _NUMBER_RE = re.compile(r"[+-]?(?:\d+(?:\.\d+)?|\.\d+)")
-_NUMBER_RANGE_RE = rf"{_NUMBER_RE.pattern}(?:\({_NUMBER_RE.pattern}-{_NUMBER_RE.pattern}\))?"
+_NUMBER_RANGE_RE = (
+    rf"{_NUMBER_RE.pattern}(?:\({_NUMBER_RE.pattern}-{_NUMBER_RE.pattern}\))?"
+)
 _SPACE_RE = r"\s+"
 
 _DAMAGE_RANGE_RE = re.compile(
-    fr"(?P<minimum>{_NUMBER_RE.pattern})"
+    rf"(?P<minimum>{_NUMBER_RE.pattern})"
     r"\s*-\s*"
-    fr"(?P<maximum>{_NUMBER_RE.pattern})"
+    rf"(?P<maximum>{_NUMBER_RE.pattern})"
 )
 
 
 def repr_condition(cond: RecipeCondition, poecd: PoeCd):
     if not cond.id.isdigit():
-        return f"'{cond.id}({cond.treshold or ""}..{cond.max or ""})'"
+        return f"'{cond.id}({cond.treshold or ''}..{cond.max or ''})'"
     modifier = poecd.modifiers.get(cond.id)
     tier_suffix = f" tier>={cond.treshold}" if (cond.treshold or 0) > 1 else ""
-    return f"'{modifier.name_modifier}{tier_suffix}'" if modifier != None else f"'#{cond.id}{tier_suffix}'"
+    return (
+        f"'{modifier.name_modifier}{tier_suffix}'"
+        if modifier != None
+        else f"'#{cond.id}{tier_suffix}'"
+    )
 
 
 def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep=", "):
@@ -40,15 +46,20 @@ def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep=", "):
     if filter_.treshold == None:
         s += "ALL OF" if operator != "not" else "NONE OF"
     else:
-        s += f"At LEAST {filter_.treshold} OF" if operator != "not" else f"FEWER THAN {filter_.treshold} OF"
-    s += "(" + filter_sep.join(
-        repr_condition(cond, poecd)
-        for cond in filter_.conds
-    ) + ")"
+        s += (
+            f"At LEAST {filter_.treshold} OF"
+            if operator != "not"
+            else f"FEWER THAN {filter_.treshold} OF"
+        )
+    s += (
+        "("
+        + filter_sep.join(repr_condition(cond, poecd) for cond in filter_.conds)
+        + ")"
+    )
     return s
 
 
-def repr_filter_group(filters: List[RecipeFilter], poecd: PoeCd, filter_sep=", "):
+def repr_filter_group(filters: list[RecipeFilter], poecd: PoeCd, filter_sep=", "):
     if len(filters) == 1:
         return repr_filter(filters[0], poecd, filter_sep)
     s = ""
@@ -66,32 +77,33 @@ def repr_filters(filters: Collection[RecipeFilter], poecd: PoeCd, group_sep=", "
             or_filters.append([x])
         else:
             or_filters[-1].append(x)
-    return f"{group_sep}OR ".join("(" + repr_filter_group(and_filters, poecd) + ")" for and_filters in or_filters)
+    return f"{group_sep}OR ".join(
+        "(" + repr_filter_group(and_filters, poecd) + ")" for and_filters in or_filters
+    )
 
 
 def repr_step(step: RecipeStep, poecd: PoeCd, indent=""):
     return (
         f"{indent}apply {step.method!r}\n"
-        f"{indent}on success {step.actions.win} {step.actions.win_route or ""}\n"
-        f"{indent}on failure {step.actions.fail} {step.actions.fail_route or ""}\n"
+        f"{indent}on success {step.actions.win} {step.actions.win_route or ''}\n"
+        f"{indent}on failure {step.actions.fail} {step.actions.fail_route or ''}\n"
         f"{indent}filters:\n"
-        f"{indent}  {repr_filters(step.filters, poecd, "\n" + indent + "  ") if step.filters and not step.autopass else "AUTOPASS"}"
+        f"{indent}  {repr_filters(step.filters, poecd, '\n' + indent + '  ') if step.filters and not step.autopass else 'AUTOPASS'}"
     )
 
 
 def repr_recipe(recipe: Recipe, poecd: PoeCd):
-    influences = " ".join(poecd.mgroups[inf].name_mgroup for inf in recipe.settings.influences)
+    influences = " ".join(
+        poecd.mgroups[inf].name_mgroup for inf in recipe.settings.influences
+    )
     return (
-        f"Crafting {poecd.bitems[recipe.settings.bitem].name_bitem} ilvl {recipe.settings.ilvl} {influences}{" influence" if influences else ""}"
-        f"\n{"\n\n".join(f"Step {i+1}\n" + repr_step(step, poecd, indent="  ") for i, step in enumerate(recipe.config))}"
+        f"Crafting {poecd.bitems[recipe.settings.bitem].name_bitem} ilvl {recipe.settings.ilvl} {influences}{' influence' if influences else ''}"
+        f"\n{'\n\n'.join(f'Step {i + 1}\n' + repr_step(step, poecd, indent='  ') for i, step in enumerate(recipe.config))}"
     )
 
 
 def _repr_condition_set(conditions: RecipeConditions) -> str:
-    return "\n".join(
-        f"- {condition!r}"
-        for condition in conditions
-    )
+    return "\n".join(f"- {condition!r}" for condition in conditions)
 
 
 def in_condition_range(value: float, condition: RecipeCondition) -> bool:
@@ -120,10 +132,7 @@ def average_damage(value: str | None) -> float:
     if value is None:
         return 0.0
 
-    return sum(
-        (min + max) / 2
-        for min, max in roll_range(value)
-    )
+    return sum((min + max) / 2 for min, max in roll_range(value))
 
 
 def attacks_per_second(value: str | None) -> float:
@@ -164,15 +173,11 @@ class ModifierMatchResult:
 
         if self.attributes:
             sections.append(
-                "Attribute conditions:\n"
-                f"{_repr_condition_set(self.attributes)}"
+                f"Attribute conditions:\n{_repr_condition_set(self.attributes)}"
             )
 
         if self.text:
-            sections.append(
-                "Text conditions:\n"
-                f"{_repr_condition_set(self.text)}"
-            )
+            sections.append(f"Text conditions:\n{_repr_condition_set(self.text)}")
 
         return "\n".join(sections) if sections else "No matching conditions"
 
@@ -210,22 +215,20 @@ class ItemMatchResult:
 
         if self.modifiers:
             modifier_sections = [
-                "\n".join((
-                    repr(item_modifier),
-                    repr(match_result),
-                ))
+                "\n".join(
+                    (
+                        repr(item_modifier),
+                        repr(match_result),
+                    )
+                )
                 for item_modifier, match_result in self.modifiers.items()
             ]
             sections.append(
-                "Matched modifiers:\n"
-                + "\n--------\n".join(modifier_sections)
+                "Matched modifiers:\n" + "\n--------\n".join(modifier_sections)
             )
 
         if self.failed:
-            sections.append(
-                "Failed conditions:\n"
-                f"{_repr_condition_set(self.failed)}"
-            )
+            sections.append(f"Failed conditions:\n{_repr_condition_set(self.failed)}")
 
         return "\n========\n".join(sections)
 
@@ -242,12 +245,12 @@ class ItemMatchContext:
     elemental_damage: float = field(init=False)
     chaos_damage: float = field(init=False)
     influence_names: tuple[str, ...] = field(init=False)
-    resistance_templates: tuple[
-        tuple[re.Pattern[str], frozenset[str]], ...
-    ] = field(init=False)
-    attribute_templates: tuple[
-        tuple[re.Pattern[str], frozenset[str]], ...
-    ] = field(init=False)
+    resistance_templates: tuple[tuple[re.Pattern[str], frozenset[str]], ...] = field(
+        init=False
+    )
+    attribute_templates: tuple[tuple[re.Pattern[str], frozenset[str]], ...] = field(
+        init=False
+    )
     normalized_modifier_text: tuple[tuple[str, ...], ...] = field(init=False)
 
     def __post_init__(self) -> None:
@@ -302,27 +305,26 @@ class ItemMatchContext:
         )
 
     def _count_slot(self, slot: str) -> int:
-        return sum(
-            modifier.slot.casefold() == slot
-            for modifier in self.item.modifiers
-        )
+        return sum(modifier.slot.casefold() == slot for modifier in self.item.modifiers)
 
     @property
     def open_prefixes(self) -> int:
         max_prefix = self.recipe_data.maxaffgrp.prefix
-        max_prefix = min(
-            max_affix.prefix,
-            max_prefix
-        ) if (max_affix := self.rarity_details.max_affix) else max_prefix
+        max_prefix = (
+            min(max_affix.prefix, max_prefix)
+            if (max_affix := self.rarity_details.max_affix)
+            else max_prefix
+        )
         return max(0, max_prefix - self.prefix_count)
 
     @property
     def open_suffixes(self) -> int:
         max_suffix = self.recipe_data.maxaffgrp.suffix
-        max_suffix = min(
-            max_affix.suffix,
-            max_suffix
-        ) if (max_affix := self.rarity_details.max_affix) else max_suffix
+        max_suffix = (
+            min(max_affix.suffix, max_suffix)
+            if (max_affix := self.rarity_details.max_affix)
+            else max_suffix
+        )
         return max(0, max_suffix - self.suffix_count)
 
     @property

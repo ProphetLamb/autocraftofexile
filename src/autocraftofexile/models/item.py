@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 _SEPARATOR = "--------"
 
@@ -13,12 +13,14 @@ class ItemIdentifier:
     base_item: str
 
     def __repr__(self) -> str:
-        return "\n".join((
-            f"Item Class: {self.item_class}",
-            f"Rarity: {self.rarity}",
-            self.name,
-            self.base_item,
-        ))
+        return "\n".join(
+            (
+                f"Item Class: {self.item_class}",
+                f"Rarity: {self.rarity}",
+                self.name,
+                self.base_item,
+            )
+        )
 
 
 @dataclass(slots=True, frozen=True)
@@ -29,7 +31,7 @@ class ItemProperties:
     critical_strike_chance: str | None = None
     attacks_per_second: str | None = None
     weapon_range: str | None = None
-    additional: tuple[str, ...] = tuple()
+    additional: tuple[str, ...] = ()
 
     def __repr__(self) -> str:
         lines: list[str] = []
@@ -40,8 +42,7 @@ class ItemProperties:
         if self.chaos_damage is not None:
             lines.append(f"Chaos Damage: {self.chaos_damage}")
         if self.critical_strike_chance is not None:
-            lines.append(
-                f"Critical Strike Chance: {self.critical_strike_chance}")
+            lines.append(f"Critical Strike Chance: {self.critical_strike_chance}")
         if self.attacks_per_second is not None:
             lines.append(f"Attacks per Second: {self.attacks_per_second}")
         if self.weapon_range is not None:
@@ -72,7 +73,7 @@ class ItemRequirements:
 
 @dataclass(slots=True, frozen=True)
 class SocketLinks:
-    sockets: tuple[str, ...] = tuple()
+    sockets: tuple[str, ...] = ()
 
     def __repr__(self) -> str:
         return "-".join(self.sockets)
@@ -121,18 +122,18 @@ class Item:
         ]
 
         if self.sockets:
-            sections.append(
-                f"Sockets: {' '.join(map(repr, self.sockets))}"
-            )
+            sections.append(f"Sockets: {' '.join(map(repr, self.sockets))}")
 
         sections.append(f"Item Level: {self.item_level}")
 
         implicit = [
-            modifier for modifier in self.modifiers
+            modifier
+            for modifier in self.modifiers
             if modifier.slot.casefold() == "implicit"
         ]
         explicit = [
-            modifier for modifier in self.modifiers
+            modifier
+            for modifier in self.modifiers
             if modifier.slot.casefold() != "implicit"
         ]
         if implicit:

@@ -1,5 +1,5 @@
-from asyncio import CancelledError
 import threading
+from asyncio import CancelledError
 
 
 class CancellationTokenSource:

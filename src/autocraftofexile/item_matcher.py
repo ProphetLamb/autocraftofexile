@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from .item_match_context import ItemMatchContext, ItemMatchResult
 from .models.item import Item
@@ -19,7 +19,10 @@ from .rules import (
 
 class ItemMatcher:
     def __init__(
-        self, method: RecipeStep, recipe_data: RecipeData, poecd: PoeCd,
+        self,
+        method: RecipeStep,
+        recipe_data: RecipeData,
+        poecd: PoeCd,
         rules: Iterable[Rule] | None = None,
     ) -> None:
         self.method = method
@@ -49,12 +52,12 @@ class ItemMatcher:
                 result.success = rhs.success
                 result.merge(rhs)
             else:
-                raise ValueError(
-                    f"Unsupported recipe filter type: {operator}"
-                )
+                raise ValueError(f"Unsupported recipe filter type: {operator}")
         return result
 
-    def _evauate_filter(self, recipe_filter: RecipeFilter, context: ItemMatchContext) -> ItemMatchResult:
+    def _evauate_filter(
+        self, recipe_filter: RecipeFilter, context: ItemMatchContext
+    ) -> ItemMatchResult:
         result = ItemMatchResult(True)
         passed = 0
 
@@ -67,9 +70,7 @@ class ItemMatcher:
             passed += int(condition_result.success)
             result.merge(condition_result)
 
-        result.success = passed >= (
-            recipe_filter.treshold or len(recipe_filter.conds)
-        )
+        result.success = passed >= (recipe_filter.treshold or len(recipe_filter.conds))
         return result
 
     def _rule_for(self, condition: RecipeCondition) -> Rule:

@@ -18,7 +18,7 @@ def load_poecd_data(file: PathLike[str] | str | None = None) -> PoeCd:
 
 def _parse_poecd_data(text: str) -> PoeCd:
     logging.debug("begin CraftOfExile data parse")
-    text = text.removeprefix('poecd=')
+    text = text.removeprefix("poecd=")
     data = json.loads(text)
     result = PoeCd.from_dict(data)
     logging.debug("done CraftOfExile data parse")

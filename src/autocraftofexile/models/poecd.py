@@ -3,13 +3,13 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Generic, Self, TypeVar
+from typing import Any, Self, TypeVar
 
 T = TypeVar("T")
 
 
 @dataclass(slots=True, frozen=True)
-class SparseArray(Generic[T]):
+class SparseArray[T]:
     """A sparse array contains items in ``seq`` and their index in ``ind``.
 
     Accessing ``array[key]`` resolves to ``array.seq[array.ind[key]]``.
@@ -26,8 +26,9 @@ class SparseArray(Generic[T]):
     ) -> Self:
         return cls(
             seq=tuple[T](item_factory(item) for item in data.get("seq", [])),
-            ind=MappingProxyType({str(key): int(index)
-                                 for key, index in data.get("ind", {}).items()}),
+            ind=MappingProxyType(
+                {str(key): int(index) for key, index in data.get("ind", {}).items()}
+            ),
         )
 
     def __getitem__(self, key: str) -> T:
@@ -124,10 +125,12 @@ class Bases:
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
             values=SparseArray[Base].from_dict(data, Base.from_dict),
-            items=MappingProxyType({
-                str(base_id): tuple(int(index) for index in indices)
-                for base_id, indices in data["items"].items()
-            }),
+            items=MappingProxyType(
+                {
+                    str(base_id): tuple(int(index) for index in indices)
+                    for base_id, indices in data["items"].items()
+                }
+            ),
         )
 
     def __getitem__(self, key: str) -> Base:
@@ -233,18 +236,25 @@ class Aliases:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            values=MappingProxyType({
-                base_id: MappingProxyType({
-                    affix: MappingProxyType({
-                        modifier_name: tuple(
-                            AliasModifier.from_dict(entry) for entry in entries
-                        )
-                        for modifier_name, entries in modifiers.items()
-                    })
-                    for affix, modifiers in affixes.items()
-                })
-                for base_id, affixes in data.items()
-            })
+            values=MappingProxyType(
+                {
+                    base_id: MappingProxyType(
+                        {
+                            affix: MappingProxyType(
+                                {
+                                    modifier_name: tuple(
+                                        AliasModifier.from_dict(entry)
+                                        for entry in entries
+                                    )
+                                    for modifier_name, entries in modifiers.items()
+                                }
+                            )
+                            for affix, modifiers in affixes.items()
+                        }
+                    )
+                    for base_id, affixes in data.items()
+                }
+            )
         )
 
     def __getitem__(
@@ -275,13 +285,19 @@ class Tiers:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            values=MappingProxyType({
-                modifier_id: MappingProxyType({
-                    group_id: tuple(ModifierTier.from_dict(tier) for tier in tiers)
-                    for group_id, tiers in groups.items()
-                })
-                for modifier_id, groups in data.items()
-            })
+            values=MappingProxyType(
+                {
+                    modifier_id: MappingProxyType(
+                        {
+                            group_id: tuple(
+                                ModifierTier.from_dict(tier) for tier in tiers
+                            )
+                            for group_id, tiers in groups.items()
+                        }
+                    )
+                    for modifier_id, groups in data.items()
+                }
+            )
         )
 
     def __getitem__(self, modifier_id: str) -> Mapping[str, tuple[ModifierTier, ...]]:
@@ -305,14 +321,17 @@ class PoeCd:
             bitems=BItems.from_dict(data.get("bitems", {})),
             bases=Bases.from_dict(data.get("bases", {})),
             bgroups=SparseArray[BGroup].from_dict(
-                data.get("bgroups", {}), BGroup.from_dict),
+                data.get("bgroups", {}), BGroup.from_dict
+            ),
             modifiers=SparseArray[Modifier].from_dict(
                 data.get("modifiers", {}), Modifier.from_dict
             ),
             mgroups=SparseArray[MGroup].from_dict(
-                data.get("mgroups", {}), MGroup.from_dict),
+                data.get("mgroups", {}), MGroup.from_dict
+            ),
             mtypes=SparseArray[MType].from_dict(
-                data.get("mtypes", {}), MType.from_dict),
+                data.get("mtypes", {}), MType.from_dict
+            ),
             aliases=Aliases.from_dict(data.get("aliases", {})),
             tiers=Tiers.from_dict(data.get("tiers", {})),
         )
