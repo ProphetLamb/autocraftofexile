@@ -476,7 +476,7 @@ class Crafter:
         pyautogui.rightClick(duration=self._duration(1 / self.options.speed))
 
     def hotkey(self, *keys: str):
-        pyautogui.hotkey(*keys, interval=self._duration(1 / self.options.speed))
+        pyautogui.hotkey(*keys, interval=self._duration(1 / 3 / self.options.speed))
 
 
 def _repr_condition(cond: RecipeCondition, poecd: PoeCd):
