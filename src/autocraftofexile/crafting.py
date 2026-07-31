@@ -297,8 +297,9 @@ class Crafter:
     options: CraftingOptions
     step_index: int = 0
     crafter_methods: tuple[CrafterMethod, ...]
-    _cached_item: Item | None
+    _current_item: Item | None
     _cached_text: str | None
+    _cached_item: Item | None
     _cached_coords: Coordinates | None
     _stopping_token: CancellationToken
 
@@ -319,8 +320,9 @@ class Crafter:
         self.options = options
         self.step_index = step_index
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
-        self._cached_item = None
+        self._current_item = None
         self._cached_text = None
+        self._cached_item = None
         self._cached_coords = None
         self._stopping_token = stopping_token
 
@@ -352,9 +354,9 @@ class Crafter:
     def _get_item(self) -> Item:
         logging.debug("begin get item")
         self._stopping_token.throw_if_cancelled()
-        if self._cached_item:
+        if self._current_item:
             logging.debug("end get item using cached item")
-            return self._cached_item
+            return self._current_item
 
         showcase = self.config.showcase
 
@@ -368,17 +370,19 @@ class Crafter:
             raise ValueError("The clipboard is empty after copying the showcase item")
         pyperclip.copy("")
 
-        if self._cached_text == text:
+        item = self._cached_item
+        if item and self._cached_text == text:
             logging.debug(
                 "item remain unchanged by the crafting method texts are equal %s\n\n%s",
                 self._cached_text,
                 text,
             )
-            assert self._cached_item
-            return self._cached_item
-        self._cached_text = text
+            self._current_item = item
+            return item
         item = parse_item(text)
+        self._cached_text = text
         self._cached_item = item
+        self._current_item = item
         logging.debug("done get item")
         return item
 
@@ -399,26 +403,27 @@ class Crafter:
                 f"{step.method!r}"
             )
 
-        cached_item = self._cached_item
         item_changed = crafter_method.invoke(self)
         if item_changed:
-            self._ensure_item_changed(cached_item)
+            self._ensure_item_changed()
 
         logging.debug(
             "done invoke step %d using method %r",
             self.step_index,
             repr(step.method),
         )
+        return item_changed
 
-    def _ensure_item_changed(self, cached_item):
+    def _ensure_item_changed(self):
+        self._current_item = None
+        cached_item = self._cached_item
         item = self._get_item()
         if cached_item == item:
             message = "Crafting method unexpectedly left the item unchanged "
             logging.warning(message)
             typer.echo(message)
             raise ValueError(message)
-        else:
-            self._cached_item = None
+        return item
 
     def evaluate_item(self, item: Item) -> CraftStepResult:
         logging.debug("begin evaluating item %s", repr(item))
@@ -514,4 +519,6 @@ class Crafter:
 
     def hotkey(self, *keys: str):
         self._stopping_token.throw_if_cancelled()
-        pyautogui.hotkey(*keys, interval=self._duration(1 / 3 / self.options.speed))
+        pyautogui.hotkey(
+            *keys, interval=self._duration(1 / len(keys) / self.options.speed)
+        )
