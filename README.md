@@ -22,6 +22,37 @@ autocraftofexile --recipe ./recipe_export_from_craft_of_exile.json
 
 If no recipe path is supplied, the application uses its default recipe location.
 
+## How to use
+
+### 1. Copy the base item
+
+Hover the item in Path of Exile and copy its detailed item data using <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd>.
+
+![Copy the base item using Ctrl+Alt+C](data/base-item.png)
+
+### 2. Import the base item into Craft of Exile
+
+![Import the base item in the simulator](data/simulator-import-item.png)
+
+### 3. Compose the recipe
+
+Create the sequence of crafting methods and result conditions that should be executed.
+
+![Compose the recipe to execute](data/simulator-recipe.png)
+
+### 4. Validate and export the recipe
+
+Run the recipe in the simulator first. When it behaves as expected, export it to `data/recipe.json`, or pass another path with `--recipe`.
+
+![Validate and export the recipe](data/simulator-generate-export-data.png)
+
+### 5. Start Auto Craft of Exile
+
+```bash
+pip install autocraftofexile
+autocraftofexile
+```
+
 ## First-time setup
 
 During first-time setup, Auto Craft of Exile asks for the screen positions of every crafting component required by the recipe.
@@ -91,51 +122,21 @@ autocraftofexile --recipe ./data/recipe_5link.json
 > [!IMPORTANT]
 > Review every example in Craft of Exile before running it. Confirm that it suits your base item, all required currencies are visible at their configured positions, and you understand its success and failure routes. Example recipes can consume substantial currency and are not safe defaults for every item.
 
-## How to use
-
-### 1. Copy the base item
-
-Hover the item in Path of Exile and copy its detailed item data using <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd>.
-
-![Copy the base item using Ctrl+Alt+C](data/base-item.png)
-
-### 2. Import the base item into Craft of Exile
-
-![Import the base item in the simulator](data/simulator-import-item.png)
-
-### 3. Compose the recipe
-
-Create the sequence of crafting methods and result conditions that should be executed.
-
-![Compose the recipe to execute](data/simulator-recipe.png)
-
-### 4. Validate and export the recipe
-
-Run the recipe in the simulator first. When it behaves as expected, export it to `data/recipe.json`, or pass another path with `--recipe`.
-
-![Validate and export the recipe](data/simulator-generate-export-data.png)
-
-### 5. Start Auto Craft of Exile
-
-```bash
-pip install autocraftofexile
-autocraftofexile
-```
+## Command line interface
 
 Useful command-line options include:
 
 ```text
-╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --speed                       <int>  The number of actions per second [default: 60]                                          │
-│ --poecd                       <str>  Path to the pocd.json file                                                              │
-│ --recipe                      <str>  Path to the recipe.json file                                                            │
-│ --gui                         <str>  Path to the gui.json file                                                               │
-│ --log                         <str>  Path to the log file                                                                    │
-│ --install-completion                 Install completion for the current shell.                                               │
-│ --show-completion                    Show completion for the current shell, to copy it or customize the installation.        │
-│ --help                -h             Show this message and exit.                                                             │
-╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --speed                       <int>  The number of actions per second [default: 60]                                       │
+│ --poecd                       <str>  Path to the pocd.json file [default: data\poecd_data.json]                           │
+│ --recipe                      <str>  Path to the recipe.json file [default: data\recipe.json]                             │
+│ --gui                         <str>  Path to the gui.json file [default: data\gui.json]                                   │
+│ --log                         <str>  Path to the log file [default: data\crafting.log]                                    │
+│ --install-completion                 Install completion for the current shell.                                            │
+│ --show-completion                    Show completion for the current shell, to copy it or customize the installation.     │
+│ --help                -h             Show this message and exit.                                                          │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 > [!TIP]
@@ -215,14 +216,15 @@ The method is included in execution statistics but omitted from the displayed **
 Supported signatures:
 
 ```text
-click, left_click
-click, right_click
+click, left_click_drag
 ```
 
-- `left_click` performs one left click at the current showcase position.
-- `right_click` performs one right click at the current showcase position.
+- `left_click_drag` performs one left click at the current showcase position
 
-Both methods are treated as item-changing actions. After either click, Auto Craft of Exile copies the item and verifies that it differs from the previously cached item. If the copied item did not change, execution stops with `Crafting method unexpectedly left the item unchanged`.
+> [!IMPORTANT]
+> Click methods retain the item on the cursor. <kbd>SHIFT<kbd/> is pressed before clicking, and released only after the condition is fulfilled.
+
+They are treated as item-changing actions. After either click, Auto Craft of Exile copies the item and verifies that it differs from the previously cached item. If the copied item did not change, execution stops with `Crafting method unexpectedly left the item unchanged`.
 
 These methods do not select a currency. Their exact in-game effect depends on the item or object currently associated with the configured showcase position.
 
