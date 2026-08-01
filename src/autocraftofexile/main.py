@@ -25,7 +25,7 @@ app = typer.Typer(
 def main(
     speed: Annotated[
         int, typer.Option("--speed", help="The number of actions per second")
-    ] = 20,
+    ] = 60,
     poecd_data_file: Annotated[
         str | None, typer.Option("--poecd", help="Path to the pocd.json file")
     ] = None,
@@ -71,7 +71,7 @@ def main(
 
     config = load_gui_config(gui_file)
 
-    worker = CraftingWorker(config, recipe, poecd, CraftingOptions(speed or 20))
+    worker = CraftingWorker(config, recipe, poecd, CraftingOptions(speed or 60))
 
     def sigint(signal, frame):
         del signal, frame
