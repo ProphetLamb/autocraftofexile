@@ -16,6 +16,7 @@ import pyperclip
 import pytweening
 import pywinctl as pwc
 from rich import print
+from rich.table import Table
 
 from .cancellation_token import CancellationToken, CancellationTokenSource
 from .item_match_context import repr_condition
@@ -304,6 +305,7 @@ class Crafter:
     _cached_item: Item | None
     _cached_coords: Coordinates | None
     _stopping_token: CancellationToken
+    _stats: dict[tuple[str | None, ...], int]
 
     def __init__(
         self,
@@ -327,6 +329,7 @@ class Crafter:
         self._cached_item = None
         self._cached_coords = None
         self._stopping_token = stopping_token
+        self._stats = {}
 
     def execute(self):
         try:
@@ -407,6 +410,7 @@ class Crafter:
             )
 
         item_changed = crafter_method.invoke(self)
+        self._stats[step.method] = self._stats.setdefault(step.method, 0) + 1
         if item_changed:
             self._ensure_item_changed()
 
@@ -472,7 +476,16 @@ class Crafter:
 
         done = self.step_index >= len(self.recipe.config)
         if done:
-            print(":sparkles: [green]Done[/green]")
+            print(":sparkles: [green]Done[/green]\n")
+            table = Table(title="Crafting Costs")
+            table.add_column(
+                "Method", justify="right", style="bright_white", no_wrap=True
+            )
+            table.add_column("Count", style="cyan")
+            for method, count in self._stats.items():
+                if method != ("check",):
+                    table.add_row(", ".join(x for x in method if x), repr(count))
+            print(table)
         else:
             print(
                 f"{'[green]Success[/green]' if match.success else '[red]Failed[/red]'}"
