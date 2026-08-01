@@ -2,6 +2,15 @@
 
 Automatically executes a [Craft of Exile](https://www.craftofexile.com/?game=poe1) Simulator recipe in [Path of Exile](https://www.pathofexile.com/).
 
+```bash
+pip install autocraftofexile
+autocraftofexile --help
+```
+
+```bash
+autocraftofexile --recipe ./recipe_export_from_craft_of_exile.json
+```
+
 ## How to use
 
 ### Copy your base item using `[CTRL]+[ALT]+[C]`
@@ -32,9 +41,9 @@ autocraftofexile
 ### First time setup
 
 For the first time setup `autocraftofexile` asks the positions of crafting components.
-| Info |
-| --- |
-| Keep `autocraftofexile` focussed. Do not click or `[Alt]+[Tab]` Path of Exile to focus. |
+
+> [!IMPORTANT]
+> Keep `autocraftofexile` focussed. Do not click or `[Alt]+[Tab]` Path of Exile to focus.
 
 ```
 Move mouse to the Orb of Transmutation and press ENTER.
@@ -65,10 +74,34 @@ The setup is written to `data/gui.json`.
 ### Begin crafting
 
 Activate `autocraftofexile` crafting by pressing the start hotkey, e.g. `f9`.
-| Info |
-| --- |
-| Ensure the Stash tab is open on the page with the crafting items |
 
+> [!IMPORTANT]
+> Ensure the Stash tab is open on the page with the crafting items
+
+
+## Supported crafting methods
+
+TODO
+
+### Currencies
+
+TODO
+
+### Special
+
+TODO
+
+## Recipe
+
+TODO
+
+### Operators
+
+TODO
+
+### Rules
+
+TODO
 
 ## Building from source
 
