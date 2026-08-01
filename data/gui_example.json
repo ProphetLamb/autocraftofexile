@@ -39,6 +39,14 @@
     "x": 1512,
     "y": 371
   },
-  "start_hotkey": "ctrl+i",
-  "stop_hotkey": "ctrl+o"
+  "jeweller": {
+    "x": 1512,
+    "y": 371
+  },
+  "fusing": {
+    "x": 1512,
+    "y": 371
+  },
+  "start_hotkey": "f9",
+  "stop_hotkey": "f10"
 }
