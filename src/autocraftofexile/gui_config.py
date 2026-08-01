@@ -6,7 +6,7 @@ from os import PathLike
 
 import keyboard
 import pyautogui
-from rich import print, prompt
+from rich import print
 
 from autocraftofexile import GUI_CONFIG_FILE
 
@@ -15,7 +15,7 @@ from .models.gui_config import Coordinates, GuiConfig
 
 def prompt_coordinates(name: str) -> Coordinates:
     time.sleep(0.1)
-    prompt.Confirm.ask(f"Move mouse to the {name} and press ENTER.")
+    input(f"Move mouse to the {name} and press ENTER")
     x, y = pyautogui.position()
     print(f"[bright_white]{name}[/bright_white]: {x}, {y}")
     return Coordinates(x, y)
@@ -36,7 +36,12 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
         with open(file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        config = GuiConfig.from_dict(data)
+        raw_config = GuiConfig.from_dict(data)
+        config = prompt_missing_config(raw_config)
+        if config != raw_config:
+            with open(file, "w", encoding="utf-8") as f:
+                json.dump(asdict(config), f, indent=2)
+
         print(
             "Successfully loaded gui config\n"
             f" Start hotkey [cyan]{config.start_hotkey}[/cyan]\n"
@@ -46,24 +51,29 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
 
     except FileNotFoundError:
         logging.debug("begin GUI config prompt")
-        config = GuiConfig(
-            transmute=prompt_coordinates("Orb of Transmutation"),
-            alteration=prompt_coordinates("Orb of Alteration"),
-            annul=prompt_coordinates("Orb of Annulment"),
-            augment=prompt_coordinates("Orb of Augmentation"),
-            exalt=prompt_coordinates("Exalted Orb"),
-            regal=prompt_coordinates("Regal Orb"),
-            alchemy=prompt_coordinates("Alchemy Orb"),
-            chaos=prompt_coordinates("Chaos Orb"),
-            scour=prompt_coordinates("Orb of Scouring"),
-            showcase=prompt_coordinates("Item Showcase"),
-            start_hotkey=prompt_hotkey("start"),
-            stop_hotkey=prompt_hotkey("stop"),
-        )
-
+        config = prompt_missing_config(GuiConfig(*{}))
         logging.debug("done GUI config prompt")
         with open(file, "w", encoding="utf-8") as f:
             json.dump(asdict(config), f, indent=2)
 
         logging.debug("done GUI config file write")
         return config
+
+
+def prompt_missing_config(existing: GuiConfig):
+    return GuiConfig(
+        transmute=existing.transmute or prompt_coordinates("Orb of Transmutation"),
+        alteration=existing.alteration or prompt_coordinates("Orb of Alteration"),
+        annul=existing.annul or prompt_coordinates("Orb of Annulment"),
+        augment=existing.augment or prompt_coordinates("Orb of Augmentation"),
+        exalt=existing.exalt or prompt_coordinates("Exalted Orb"),
+        regal=existing.regal or prompt_coordinates("Regal Orb"),
+        alchemy=existing.alchemy or prompt_coordinates("Alchemy Orb"),
+        chaos=existing.chaos or prompt_coordinates("Chaos Orb"),
+        scour=existing.scour or prompt_coordinates("Orb of Scouring"),
+        jeweller=existing.jeweller or prompt_coordinates("Jeweller's Orb"),
+        fusing=existing.fusing or prompt_coordinates("Orb of Fusing"),
+        showcase=existing.showcase or prompt_coordinates("Item Showcase"),
+        start_hotkey=existing.start_hotkey or prompt_hotkey("start"),
+        stop_hotkey=existing.stop_hotkey or prompt_hotkey("stop"),
+    )

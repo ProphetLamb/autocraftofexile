@@ -9,11 +9,10 @@ class Coordinates:
     y: int
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        return cls(
-            x=data["x"],
-            y=data["y"],
-        )
+    def from_dict(cls, data: Mapping[str, Any] | None) -> Self | None:
+        if not data or not "x" in data or not "y" in data:
+            return None
+        return cls(x=data["x"], y=data["y"])
 
 
 @dataclass(slots=True)
@@ -29,6 +28,8 @@ class GuiConfig:
     exalt: Coordinates
     scour: Coordinates
     annul: Coordinates
+    jeweller: Coordinates
+    fusing: Coordinates
 
     start_hotkey: str
     stop_hotkey: str
@@ -36,16 +37,18 @@ class GuiConfig:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            showcase=Coordinates.from_dict(data["showcase"]),
-            transmute=Coordinates.from_dict(data["transmute"]),
-            augment=Coordinates.from_dict(data["augment"]),
-            alteration=Coordinates.from_dict(data["alteration"]),
-            regal=Coordinates.from_dict(data["regal"]),
-            alchemy=Coordinates.from_dict(data["alchemy"]),
-            chaos=Coordinates.from_dict(data["chaos"]),
-            exalt=Coordinates.from_dict(data["exalt"]),
-            scour=Coordinates.from_dict(data["scour"]),
-            annul=Coordinates.from_dict(data["annul"]),
-            start_hotkey=data["start_hotkey"],
-            stop_hotkey=data["stop_hotkey"],
+            showcase=Coordinates.from_dict(data.get("showcase")),  # type: ignore
+            transmute=Coordinates.from_dict(data.get("transmute")),  # type: ignore
+            augment=Coordinates.from_dict(data.get("augment")),  # type: ignore
+            alteration=Coordinates.from_dict(data.get("alteration")),  # type: ignore
+            regal=Coordinates.from_dict(data.get("regal")),  # type: ignore
+            alchemy=Coordinates.from_dict(data.get("alchemy")),  # type: ignore
+            chaos=Coordinates.from_dict(data.get("chaos")),  # type: ignore
+            exalt=Coordinates.from_dict(data.get("exalt")),  # type: ignore
+            scour=Coordinates.from_dict(data.get("scour")),  # type: ignore
+            annul=Coordinates.from_dict(data.get("annul")),  # type: ignore
+            jeweller=Coordinates.from_dict(data.get("jeweller")),  # type: ignore
+            fusing=Coordinates.from_dict(data.get("fusing")),  # type: ignore
+            start_hotkey=data.get("start_hotkey"),  # type: ignore
+            stop_hotkey=data.get("stop_hotkey"),  # type: ignore
         )

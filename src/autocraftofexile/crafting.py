@@ -212,6 +212,22 @@ CURRENCY_METHODS: tuple[CurrencyMethodDefinition, ...] = (
         method=("currency", "annul"),
         coord_field="annul",
     ),
+    CurrencyMethodDefinition(
+        method=("currency", "fusing", "fusing_normal"),
+        coord_field="fusing",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "fusing", None),
+        coord_field="fusing",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "jeweller", "jeweller_normal"),
+        coord_field="jeweller",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "jeweller", None),
+        coord_field="jeweller",
+    ),
 )
 
 CURRENCY_METHOD_BY_SIGNATURE: Mapping[
@@ -336,24 +352,30 @@ class Crafter:
             self._ensure_window_focus()
         except:
             print("[red]Failed to focus Path of Exile[/red]")
+            self.print_stats_table()
             raise
         try:
             self._invoke_step()
         except:
             print(f"[red]Failed to invoke crafting step {self.step_index + 1}[/red]")
+            self.print_stats_table()
             raise
         item: Item
         try:
             item = self._get_item()
         except:
             print("[red]Invalid item copied by CTRL+ALT+C[/red]")
+            self.print_stats_table()
             raise
         result: CraftStepResult
         try:
             result = self.evaluate_item(item)
         except:
             print(f"[red]Failed to evaluate crafting step {self.step_index + 1}[/red]")
+            self.print_stats_table()
             raise
+        if result.done:
+            self.print_stats_table()
         return result
 
     def _get_item(self) -> Item:
@@ -477,15 +499,6 @@ class Crafter:
         done = self.step_index >= len(self.recipe.config)
         if done:
             print(":sparkles: [green]Done[/green]\n")
-            table = Table(title="Crafting Costs")
-            table.add_column(
-                "Method", justify="right", style="bright_white", no_wrap=True
-            )
-            table.add_column("Count", style="cyan")
-            for method, count in self._stats.items():
-                if method != ("check",):
-                    table.add_row(", ".join(x for x in method if x), repr(count))
-            print(table)
         else:
             print(
                 f"{'[green]Success[/green]' if match.success else '[red]Failed[/red]'}"
@@ -493,6 +506,15 @@ class Crafter:
             )
         logging.debug("done goto step")
         return CraftStepResult(match, done)
+
+    def print_stats_table(self):
+        table = Table(title="Crafting Costs")
+        table.add_column("Method", justify="right", style="bright_white", no_wrap=True)
+        table.add_column("Count", style="cyan")
+        for method, count in self._stats.items():
+            if method != ("check",):
+                table.add_row(", ".join(x for x in method if x), repr(count))
+        print(table)
 
     def _ensure_window_focus(self):
         poe = pwc.getWindowsWithTitle("Path of Exile").pop()
