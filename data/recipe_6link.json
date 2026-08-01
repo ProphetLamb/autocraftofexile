@@ -1,0 +1,150 @@
+{
+  "settings": {
+    "bgroup": 7,
+    "base": "21",
+    "bitem": "8114",
+    "ilvl": "85",
+    "rarity": "magic",
+    "influences": [
+      "2"
+    ],
+    "eldritch": null,
+    "catalysts": null,
+    "quality": 20,
+    "corrupted": 0,
+    "destroyed": 0
+  },
+  "data": {
+    "fmodpool": null,
+    "eldritch": null,
+    "dominance": null,
+    "mtypes": null,
+    "implicits": [
+      {
+        "name": "+25% Chance to Block Spell Damage",
+        "nvalues": null,
+        "rolls": []
+      }
+    ],
+    "rollable_implicits": 0,
+    "cmodpool": null,
+    "hmodpool": null,
+    "maxaffgrp": {
+      "prefix": 3,
+      "suffix": 3
+    },
+    "is_rare": 1,
+    "is_fossil": 1,
+    "is_craftable": 1,
+    "is_influenced": 1,
+    "is_essence": 1,
+    "is_catalyst": 0,
+    "is_notable": 0,
+    "unique_notable": 0,
+    "iaffixes": [
+      {
+        "atype": "prefix",
+        "id": "2307",
+        "mgrp": "1",
+        "modgroups": [
+          "SpellDamageAndMana"
+        ],
+        "weight": "1500",
+        "nvalues": "[[33,43],[36,41]]",
+        "tindex": 2,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          37,
+          36
+        ]
+      }
+    ],
+    "meta_flags": {},
+    "imprint": null,
+    "enchant": "",
+    "iaffbt": {
+      "prefix": 1,
+      "suffix": 0
+    },
+    "cmaxaffgrp": {
+      "prefix": 1,
+      "suffix": 1
+    },
+    "mgrpdata": null,
+    "affbymgrp": null,
+    "veiledmods": null
+  },
+  "config": [
+    {
+      "method": [
+        "currency",
+        "fusing",
+        "fusing_normal"
+      ],
+      "mopts": null,
+      "autopass": false,
+      "filters": [
+        {
+          "type": "and",
+          "treshold": null,
+          "conds": [
+            {
+              "id": "pseudo_link_count",
+              "treshold": 6,
+              "max": null,
+              "base": null
+            }
+          ]
+        }
+      ],
+      "vfilter": null,
+      "actions": {
+        "win": "end",
+        "win_route": null,
+        "fail": "loop",
+        "fail_route": null
+      }
+    }
+  ],
+  "flow": null,
+  "states": {
+    "init": {
+      "rarity": "magic",
+      "dominance": null,
+      "influences": [
+        "2"
+      ],
+      "meta": null
+    },
+    "current": {
+      "rarity": "magic",
+      "dominance": null,
+      "influences": [
+        "2"
+      ],
+      "meta": null
+    },
+    "states": [
+      {
+        "rarity": "magic",
+        "dominance": null,
+        "influences": [
+          "2"
+        ],
+        "meta": null
+      },
+      {
+        "rarity": "magic",
+        "dominance": null,
+        "influences": [
+          "2"
+        ],
+        "meta": null
+      }
+    ]
+  },
+  "results": null,
+  "items": null
+}
