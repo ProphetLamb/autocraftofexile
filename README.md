@@ -22,6 +22,41 @@ autocraftofexile --recipe ./recipe_export_from_craft_of_exile.json
 
 If no recipe path is supplied, the application uses its default recipe location.
 
+## First-time setup
+
+During first-time setup, Auto Craft of Exile asks for the screen positions of every crafting component required by the recipe.
+
+> [!IMPORTANT]
+> Keep the Auto Craft of Exile terminal focused while answering setup prompts. Do not click or use <kbd>Alt</kbd>+<kbd>Tab</kbd> to focus Path of Exile unless a prompt explicitly asks you to interact with it.
+
+For each required currency or component, hover its stash position and press <kbd>Enter</kbd>:
+
+```text
+Move mouse to the Orb of Transmutation and press ENTER.
+```
+
+![Move mouse to the Orb of Transmutation and press Enter](data/hover-orb-of-transmutation.png)
+
+The setup then records the position of the item being crafted:
+
+```text
+Move mouse to the Item Showcase and press ENTER.
+```
+
+![Move mouse to the Item Showcase and press Enter](data/base-item.png)
+
+Finally, press the desired start and stop key combinations. The first detected combination is stored.
+
+```text
+Press the start hotkey.
+start hotkey: f9
+
+Press the stop hotkey.
+stop hotkey: f10
+```
+
+The setup is written to `data/gui.json`. Run setup again or remove that file if the game window, display scaling, stash layout, or crafting positions change.
+
 ## How it works
 
 For every recipe step, Auto Craft of Exile:
@@ -32,6 +67,28 @@ For every recipe step, Auto Craft of Exile:
 4. follows the recipe until a step passes or the recipe terminates.
 
 The application does not modify the game client or communicate with the game process. It automates configured screen positions and reads item text copied to the clipboard. Moving the game window, changing the UI layout, or covering the relevant inventory positions can therefore make a configured action unsafe or inaccurate.
+
+## Example recipes
+
+New users should start with one of the ready-made recipes in the repository's [`data/` directory](https://github.com/ProphetLamb/autocraftofexile/tree/main/data). They are useful both as working recipes and as references for exported methods, filters, conditions, and routes.
+
+- [`recipe_5link.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_5link.json): create a five-linked item.
+- [`recipe_5socket.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_5socket.json): create an item with five sockets.
+- [`recipe_6link.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_6link.json): create a six-linked item.
+- [`recipe_6socket.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_6socket.json): create an item with six sockets.
+- [`recipe_example.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_example.json): a broader reference demonstrating the supported recipe structure.
+- [`recipe_flask_inc_effect.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_flask_inc_effect.json): craft a flask for increased effect.
+- [`recipe_staff_str_stacker_alt_spam.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_staff_str_stacker_alt_spam.json): use alteration crafting for a strength-stacking staff.
+- [`recipe.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe.json): the repository's default recipe file.
+
+After cloning the repository, run an example by passing its local path:
+
+```bash
+autocraftofexile --recipe ./data/recipe_5link.json
+```
+
+> [!IMPORTANT]
+> Review every example in Craft of Exile before running it. Confirm that it suits your base item, all required currencies are visible at their configured positions, and you understand its success and failure routes. Example recipes can consume substantial currency and are not safe defaults for every item.
 
 ## How to use
 
@@ -113,41 +170,6 @@ autocraftofexile --speed 20
 ```
 
 `speed` must be greater than zero. A zero value currently falls back to `60` at startup, while a negative value can produce invalid GUI timings and should not be used.
-
-## First-time setup
-
-During first-time setup, Auto Craft of Exile asks for the screen positions of every crafting component required by the recipe.
-
-> [!IMPORTANT]
-> Keep the Auto Craft of Exile terminal focused while answering setup prompts. Do not click or use <kbd>Alt</kbd>+<kbd>Tab</kbd> to focus Path of Exile unless a prompt explicitly asks you to interact with it.
-
-For each required currency or component, hover its stash position and press <kbd>Enter</kbd>:
-
-```text
-Move mouse to the Orb of Transmutation and press ENTER.
-```
-
-![Move mouse to the Orb of Transmutation and press Enter](data/hover-orb-of-transmutation.png)
-
-The setup then records the position of the item being crafted:
-
-```text
-Move mouse to the Item Showcase and press ENTER.
-```
-
-![Move mouse to the Item Showcase and press Enter](data/base-item.png)
-
-Finally, press the desired start and stop key combinations. The first detected combination is stored.
-
-```text
-Press the start hotkey.
-start hotkey: f9
-
-Press the stop hotkey.
-stop hotkey: f10
-```
-
-The setup is written to `data/gui.json`. Run setup again or remove that file if the game window, display scaling, stash layout, or crafting positions change.
 
 ## Begin crafting
 
