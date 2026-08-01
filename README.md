@@ -67,16 +67,52 @@ autocraftofexile
 Useful command-line options include:
 
 ```text
---recipe PATH   Path to the exported Craft of Exile recipe
---poecd PATH    Path to the Craft of Exile data file
---gui PATH      Path to the GUI-position configuration
---log PATH      Path to the log file
---speed NUMBER  Maximum number of automated actions per second
--h, --help      Show all available options
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --speed                       <int>  The number of actions per second [default: 60]                                          │
+│ --poecd                       <str>  Path to the pocd.json file                                                              │
+│ --recipe                      <str>  Path to the recipe.json file                                                            │
+│ --gui                         <str>  Path to the gui.json file                                                               │
+│ --log                         <str>  Path to the log file                                                                    │
+│ --install-completion                 Install completion for the current shell.                                               │
+│ --show-completion                    Show completion for the current shell, to copy it or customize the installation.        │
+│ --help                -h             Show this message and exit.                                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
 ```
 
 > [!TIP]
-> Use a lower `--speed` if item text is copied before Path of Exile has finished updating the item or if input is occasionally missed.
+> Start with the default speed and lower it if Path of Exile misses input, the clipboard contains stale item text, or the client has not finished rendering an item change.
+
+### How `--speed` behaves
+
+`--speed` is a timing scale, not a strict limit on complete crafting steps per second. Higher values shorten mouse movement, click, keyboard, and clipboard delays. Lower values make every automated interaction slower.
+
+The default is `60`. Internally, the setting affects actions as follows:
+
+- mouse travel duration is approximately 4 to 6 divided by `speed` seconds;
+- click duration is approximately 1 divided by `speed` seconds;
+- waits after pressing or releasing a key are approximately 1 divided by `speed` seconds;
+- the interval between keys in a hotkey is approximately 1 divided by the number of keys and `speed`;
+- after copying an item, the application waits approximately 1 divided by `speed` seconds before reading the clipboard.
+
+Each duration is randomized by about 15 percent. Mouse coordinates are also randomized by up to four pixels in each direction. These variations make interactions less mechanically uniform, so observed timings will not be exact.
+
+For example, at the default speed of `60`, a mouse movement normally takes about 67 to 100 milliseconds before random variation, while a click or clipboard wait is about 17 milliseconds. At speed `20`, the same operations take roughly three times as long. One crafting step includes multiple operations, so `--speed 60` does **not** mean 60 completed crafts per second.
+
+> [!WARNING]
+> Values that are too high can cause missed clicks, stale clipboard reads, or an unchanged-item error. The application checks that item-changing methods actually changed the copied item and stops when they did not. There is no benefit to choosing a speed faster than the game client and clipboard can process reliably.
+
+Examples:
+
+```bash
+# Default timing
+autocraftofexile --speed 60
+
+# More conservative timing for a slower client or remote desktop
+autocraftofexile --speed 20
+```
+
+`speed` must be greater than zero. A zero value currently falls back to `60` at startup, while a negative value can produce invalid GUI timings and should not be used.
 
 ## First-time setup
 
@@ -131,30 +167,186 @@ Activate crafting with the configured start hotkey, for example <kbd>F9</kbd>. U
 
 ## Supported crafting methods
 
-A recipe step contains a **crafting method** and zero or more **filters**. Auto Craft of Exile executes methods represented by the Craft of Exile recipe export when a corresponding method handler is available in the installed version.
+A recipe step identifies its method using an ordered signature exported by Craft of Exile. Signatures are matched case-insensitively, but every component must otherwise match a registered method exactly. The application validates the complete recipe against `DEFAULT_CRAFTER_METHODS` before crafting begins.
 
-At startup, the recipe is validated against the registered crafting methods. An unsupported method is reported before automation begins, so no recipe actions are performed with a partially understood recipe.
+There are three categories of supported methods:
 
-### Currencies
+- **check**, which reads and evaluates the item without changing it;
+- **click**, which clicks the configured showcase position;
+- **currency**, which selects a configured currency and applies it to the showcase item.
 
-Currency methods apply the corresponding currency at its configured stash position to the configured item position. For example, a recipe may use an Orb of Transmutation as one step and then evaluate whether the resulting magic item satisfies that step's filters.
+### Check
 
-Each currency used by the recipe must:
+Signature:
 
-- be visible in the open stash tab;
-- occupy the same position recorded in `data/gui.json`;
-- have enough remaining uses for the recipe;
-- be applicable to the current item state.
+```text
+check
+```
 
-The exact set of currency methods is determined by `DEFAULT_CRAFTER_METHODS` in the installed release. This keeps method validation and execution aligned. If Craft of Exile adds or renames a method before Auto Craft of Exile supports it, recipe validation fails instead of guessing which action to perform.
+The check method does not click the item and reports that no item change is expected. It copies the current showcase item and evaluates the step's filters. This is useful for branching based on the initial item or checking the result of an earlier action without spending currency.
 
-### Special methods
+The method is included in execution statistics but omitted from the displayed **Crafting Costs** table because it consumes no crafting material.
 
-Craft of Exile exports may also contain control or special steps rather than a simple currency click. Auto Craft of Exile accepts only special methods that have an explicit registered handler.
+### Click methods
 
-Special steps can alter recipe flow, pass without applying a currency, or represent behavior that needs more context than a single click. Because their meaning is handler-specific, always validate the exported recipe at startup and test it with inexpensive materials before relying on it.
+Supported signatures:
 
-A step with `autopass` enabled, or a step without filters, passes immediately after its method behavior has completed. It does not require an item condition to succeed.
+```text
+click, left_click
+click, right_click
+```
+
+- `left_click` performs one left click at the current showcase position.
+- `right_click` performs one right click at the current showcase position.
+
+Both methods are treated as item-changing actions. After either click, Auto Craft of Exile copies the item and verifies that it differs from the previously cached item. If the copied item did not change, execution stops with `Crafting method unexpectedly left the item unchanged`.
+
+These methods do not select a currency. Their exact in-game effect depends on the item or object currently associated with the configured showcase position.
+
+### Currency methods
+
+Currency methods right-click the configured currency position, move to the showcase item, hold <kbd>Shift</kbd>, and left-click the item. Holding Shift allows repeated use of the selected currency.
+
+If the next step uses the same currency signature, the application keeps that currency selected and performs another left click. When the signature changes, it releases Shift, selects the newly required currency, moves back to the showcase, holds Shift again, and applies it. Shift is released when the crafter exits, including when execution is cancelled or fails.
+
+Every supported signature and GUI coordinate is listed below.
+
+#### Orb of Transmutation
+
+```text
+currency, transmute
+```
+
+Uses the `transmute` coordinate. Applies an Orb of Transmutation to the showcase item.
+
+#### Orb of Augmentation
+
+```text
+currency, augmentation, augmentation_normal
+currency, augmentation, <null>
+```
+
+Both signatures use the `augment` coordinate and perform the same GUI action. The `<null>` entry represents a missing third signature component in the exported recipe, not the literal string `"null"`.
+
+#### Orb of Alteration
+
+```text
+currency, alteration
+```
+
+Uses the `alteration` coordinate.
+
+#### Regal Orb
+
+```text
+currency, regal, regal_normal
+currency, regal, <null>
+```
+
+Both signatures use the `regal` coordinate and perform the same GUI action.
+
+#### Orb of Alchemy
+
+```text
+currency, alchemy
+```
+
+Uses the `alchemy` coordinate.
+
+#### Chaos Orb
+
+```text
+currency, chaos
+```
+
+Uses the `chaos` coordinate.
+
+#### Exalted Orb
+
+```text
+currency, exalted, exalted_normal
+currency, exalted, <null>
+```
+
+Both signatures use the `exalt` coordinate and perform the same GUI action.
+
+#### Orb of Scouring
+
+```text
+currency, scour
+```
+
+Uses the `scour` coordinate.
+
+#### Orb of Annulment
+
+```text
+currency, annul
+```
+
+Uses the `annul` coordinate.
+
+#### Orb of Fusing
+
+```text
+currency, fusing, fusing_normal
+currency, fusing, <null>
+```
+
+Both signatures use the `fusing` coordinate and perform the same GUI action.
+
+#### Jeweller's Orb
+
+```text
+currency, jeweller, jeweller_normal
+currency, jeweller, <null>
+```
+
+Both signatures use the `jeweller` coordinate and perform the same GUI action.
+
+### Currency method reference
+
+| Craft of Exile signature | Currency | `GuiConfig` coordinate |
+|---|---|---|
+| `currency, transmute` | Orb of Transmutation | `transmute` |
+| `currency, augmentation, augmentation_normal` | Orb of Augmentation | `augment` |
+| `currency, augmentation, <null>` | Orb of Augmentation | `augment` |
+| `currency, alteration` | Orb of Alteration | `alteration` |
+| `currency, regal, regal_normal` | Regal Orb | `regal` |
+| `currency, regal, <null>` | Regal Orb | `regal` |
+| `currency, alchemy` | Orb of Alchemy | `alchemy` |
+| `currency, chaos` | Chaos Orb | `chaos` |
+| `currency, exalted, exalted_normal` | Exalted Orb | `exalt` |
+| `currency, exalted, <null>` | Exalted Orb | `exalt` |
+| `currency, scour` | Orb of Scouring | `scour` |
+| `currency, annul` | Orb of Annulment | `annul` |
+| `currency, fusing, fusing_normal` | Orb of Fusing | `fusing` |
+| `currency, fusing, <null>` | Orb of Fusing | `fusing` |
+| `currency, jeweller, jeweller_normal` | Jeweller's Orb | `jeweller` |
+| `currency, jeweller, <null>` | Jeweller's Orb | `jeweller` |
+
+> [!NOTE]
+> Method variants that share a coordinate currently perform the same GUI action. They are registered separately because Craft of Exile can export more than one signature for the same normal currency operation.
+
+### Item-change verification
+
+`left_click`, `right_click`, and every currency method return that they expect the item to change. Auto Craft of Exile then:
+
+1. clears the current parsed-item cache;
+2. copies the showcase item with <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd>;
+3. parses the copied text;
+4. compares the item with the previously cached item;
+5. stops if the item is unchanged.
+
+`check` is the only built-in method that does not require an item change.
+
+This protects against an empty currency stack, an inapplicable currency, an incorrect coordinate, a missed click, or a client that did not update quickly enough. It can also stop a valid action when the resulting item serialization is genuinely identical, so inspect the log and reduce `--speed` before retrying.
+
+### Unsupported methods
+
+The current release does **not** provide generic handlers for every method available in Craft of Exile. Fossils, essences, harvest crafts, bench crafts, beastcrafting, eldritch currencies, awakened currencies, and other specialized systems are unsupported unless their exact signature is added to `DEFAULT_CRAFTER_METHODS` in a later release.
+
+When a recipe contains an unregistered signature, validation reports the method before automation begins. If an unsupported method nevertheless reaches execution, the crafter stops with an error containing the step index and method signature. It never substitutes a similar currency automatically.
 
 ## Recipes
 
