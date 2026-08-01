@@ -249,6 +249,21 @@ class CrafterMethodCheck(CrafterMethod):
         del crafter
         return False
 
+class CrafterMethodLeftClick(CrafterMethod):
+    method = ("click", "left_click")
+
+    def invoke(self, crafter: Crafter) -> bool:
+        crafter.left_click()
+        return True
+
+
+class CrafterMethodRightClick(CrafterMethod):
+    method = ("click", "right_click")
+
+    def invoke(self, crafter: Crafter) -> bool:
+        crafter.right_click()
+        return True
+
 
 def _normalize_method(method: Iterable[str | None]) -> tuple[str | None, ...]:
     return tuple(part.casefold() if part else None for part in method)
@@ -308,6 +323,8 @@ class CrafterMethodCurrency(CrafterMethod):
 
 DEFAULT_CRAFTER_METHODS: tuple[CrafterMethod, ...] = (
     CrafterMethodCheck(),
+    CrafterMethodLeftClick(),
+    CrafterMethodRightClick(),
     *[CrafterMethodCurrency(method) for method in CURRENCY_METHODS],
 )
 
