@@ -8,13 +8,13 @@ from typing import Annotated
 import typer
 
 from autocraftofexile import LOG_FILE, POECD_FILE
-from autocraftofexile.rules import DEFAULT_RULES
 
 from .crafting import DEFAULT_CRAFTER_METHODS, CraftingOptions, CraftingWorker
 from .gui_config import load_gui_config
 from .item_match_context import repr_recipe
 from .poecd_loader import load_poecd_data
 from .recipe_loader import load_recipe, validate_recipe
+from .rules import DEFAULT_RULES
 
 app = typer.Typer(
     suggest_commands=True, context_settings={"help_option_names": ["-h", "--help"]}

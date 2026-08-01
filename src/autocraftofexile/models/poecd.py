@@ -25,9 +25,9 @@ class SparseArray[T]:
         item_factory: Callable[[Mapping[str, Any]], T],
     ) -> Self:
         return cls(
-            seq=tuple[T](item_factory(item) for item in data.get("seq", [])),
+            seq=tuple[T](item_factory(item) for item in data.get("seq") or []),
             ind=MappingProxyType(
-                {str(key): int(index) for key, index in data.get("ind", {}).items()}
+                {str(key): int(index) for key, index in (data.get("ind") or {}).items()}
             ),
         )
 
@@ -318,20 +318,20 @@ class PoeCd:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            bitems=BItems.from_dict(data.get("bitems", {})),
-            bases=Bases.from_dict(data.get("bases", {})),
+            bitems=BItems.from_dict(data.get("bitems") or {}),
+            bases=Bases.from_dict(data.get("bases") or {}),
             bgroups=SparseArray[BGroup].from_dict(
-                data.get("bgroups", {}), BGroup.from_dict
+                data.get("bgroups") or {}, BGroup.from_dict
             ),
             modifiers=SparseArray[Modifier].from_dict(
-                data.get("modifiers", {}), Modifier.from_dict
+                data.get("modifiers") or {}, Modifier.from_dict
             ),
             mgroups=SparseArray[MGroup].from_dict(
-                data.get("mgroups", {}), MGroup.from_dict
+                data.get("mgroups") or {}, MGroup.from_dict
             ),
             mtypes=SparseArray[MType].from_dict(
-                data.get("mtypes", {}), MType.from_dict
+                data.get("mtypes") or {}, MType.from_dict
             ),
-            aliases=Aliases.from_dict(data.get("aliases", {})),
-            tiers=Tiers.from_dict(data.get("tiers", {})),
+            aliases=Aliases.from_dict(data.get("aliases") or {}),
+            tiers=Tiers.from_dict(data.get("tiers") or {}),
         )

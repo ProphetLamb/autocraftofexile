@@ -14,8 +14,8 @@ class AffixGroups:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            prefix=data.get("prefix", 0),
-            suffix=data.get("suffix", 0),
+            prefix=data.get("prefix") or 0,
+            suffix=data.get("suffix") or 0,
         )
 
 
@@ -36,17 +36,17 @@ class ItemAffix:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            atype=data.get("atype", ""),
-            id=data.get("id", ""),
-            mgrp=data.get("mgrp", ""),
-            modgroups=tuple(data.get("modgroups", ())),
-            weight=data.get("weight", "0"),
-            nvalues=data.get("nvalues", "0"),
-            tindex=data.get("tindex", 0),
-            frac=data.get("frac", 0),
-            maven=data.get("maven", 0),
-            bench=data.get("bench", 0),
-            rolls=tuple(data.get("rolls", ())),
+            atype=data.get("atype") or "",
+            id=data.get("id") or "",
+            mgrp=data.get("mgrp") or "",
+            modgroups=tuple(data.get("modgroups") or ()),
+            weight=data.get("weight") or "0",
+            nvalues=data.get("nvalues") or "0",
+            tindex=data.get("tindex") or 0,
+            frac=data.get("frac") or 0,
+            maven=data.get("maven") or 0,
+            bench=data.get("bench") or 0,
+            rolls=tuple(data.get("rolls") or ()),
         )
 
 
@@ -87,26 +87,26 @@ class RecipeData:
             dominance=data.get("dominance"),
             mtypes=data.get("mtypes"),
             implicits=data.get("implicits"),
-            rollable_implicits=data.get("rollable_implicits", 0),
+            rollable_implicits=data.get("rollable_implicits") or 0,
             cmodpool=data.get("cmodpool"),
             hmodpool=data.get("hmodpool"),
-            maxaffgrp=AffixGroups.from_dict(data.get("maxaffgrp", {})),
-            is_rare=data.get("is_rare", 0),
-            is_fossil=data.get("is_fossil", 0),
-            is_craftable=data.get("is_craftable", 0),
-            is_influenced=data.get("is_influenced", 0),
-            is_essence=data.get("is_essence", 0),
-            is_catalyst=data.get("is_catalyst", 0),
-            is_notable=data.get("is_notable", 0),
-            unique_notable=data.get("unique_notable", 0),
+            maxaffgrp=AffixGroups.from_dict(data.get("maxaffgrp") or {}),
+            is_rare=data.get("is_rare") or 0,
+            is_fossil=data.get("is_fossil") or 0,
+            is_craftable=data.get("is_craftable") or 0,
+            is_influenced=data.get("is_influenced") or 0,
+            is_essence=data.get("is_essence") or 0,
+            is_catalyst=data.get("is_catalyst") or 0,
+            is_notable=data.get("is_notable") or 0,
+            unique_notable=data.get("unique_notable") or 0,
             iaffixes=tuple(
-                ItemAffix.from_dict(value) for value in data.get("iaffixes", ())
+                ItemAffix.from_dict(value) for value in data.get("iaffixes") or ()
             ),
-            meta_flags=MappingProxyType(data.get("meta_flags", {})),
+            meta_flags=MappingProxyType(data.get("meta_flags") or {}),
             imprint=data.get("imprint"),
-            enchant=data.get("enchant", ""),
-            iaffbt=AffixGroups.from_dict(data.get("iaffbt", {})),
-            cmaxaffgrp=AffixGroups.from_dict(data.get("cmaxaffgrp", {})),
+            enchant=data.get("enchant") or "",
+            iaffbt=AffixGroups.from_dict(data.get("iaffbt") or {}),
+            cmaxaffgrp=AffixGroups.from_dict(data.get("cmaxaffgrp") or {}),
             mgrpdata=data.get("mgrpdata"),
             affbymgrp=data.get("affbymgrp"),
             veiledmods=data.get("veiledmods"),
@@ -132,18 +132,18 @@ class RecipeSettings:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            bgroup=data.get("bgroup", 0),
-            base=data.get("base", ""),
-            bitem=data.get("bitem", ""),
-            ilvl=data.get("ilvl", 0),
-            rarity=data.get("rarity", "Normal"),
-            influences=tuple(data.get("influences", [])),
-            quality=data.get("quality", 0),
-            corrupted=data.get("corrupted", 0),
-            destroyed=data.get("destroyed", 0),
-            implicits=tuple(data.get("implicits", [])),
+            bgroup=data.get("bgroup") or 0,
+            base=data.get("base") or "",
+            bitem=data.get("bitem") or "",
+            ilvl=data.get("ilvl") or 0,
+            rarity=data.get("rarity") or "Normal",
+            influences=tuple(data.get("influences") or []),
+            quality=data.get("quality") or 0,
+            corrupted=data.get("corrupted") or 0,
+            destroyed=data.get("destroyed") or 0,
+            implicits=tuple(data.get("implicits") or []),
             veils=tuple(data.get("veils") or []),
-            socketed=tuple(data.get("socketed", [])),
+            socketed=tuple(data.get("socketed") or []),
             sockets=data.get("sockets") or 0,
         )
 
@@ -158,7 +158,7 @@ class RecipeCondition:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            id=data.get("id", ""),
+            id=data.get("id") or "",
             treshold=data.get("treshold"),
             max=data.get("max"),
             base=data.get("base"),
@@ -174,12 +174,12 @@ class RecipeFilter:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            type=str(data.get("type", "")),
+            type=str(data.get("type") or ""),
             treshold=int(data["treshold"])
             if "treshold" in data and data["treshold"] is not None
             else None,
             conds=tuple(
-                RecipeCondition.from_dict(value) for value in data.get("conds", ())
+                RecipeCondition.from_dict(value) for value in data.get("conds") or ()
             ),
         )
 
@@ -194,9 +194,9 @@ class RecipeActions:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            win=data.get("win", ""),
+            win=data.get("win") or "",
             win_route=data.get("win_route"),
-            fail=data.get("fail", ""),
+            fail=data.get("fail") or "",
             fail_route=data.get("fail_route"),
         )
 
@@ -212,9 +212,9 @@ class RecipeStep:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        method = tuple(data.get("method", ()))
+        method = tuple(data.get("method") or ())
         mopts = data.get("mopts")
-        autopass = bool(data.get("autopass", False))
+        autopass = bool(data.get("autopass") or False)
 
         filters_raw = data.get("filters")
         filters = (
@@ -232,7 +232,7 @@ class RecipeStep:
             autopass=autopass,
             filters=filters,
             vfilter=vfilter,
-            actions=RecipeActions.from_dict(data.get("actions", {})),
+            actions=RecipeActions.from_dict(data.get("actions") or {}),
         )
 
 
@@ -245,7 +245,7 @@ class Recipe:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            settings=RecipeSettings.from_dict(data.get("settings", {})),
-            data=RecipeData.from_dict(data.get("data", {})),
-            config=tuple(RecipeStep.from_dict(x) for x in data.get("config", ())),
+            settings=RecipeSettings.from_dict(data.get("settings") or {}),
+            data=RecipeData.from_dict(data.get("data") or {}),
+            config=tuple(RecipeStep.from_dict(x) for x in data.get("config") or ()),
         )
