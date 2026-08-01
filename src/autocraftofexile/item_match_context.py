@@ -36,7 +36,7 @@ def repr_condition(cond: RecipeCondition, poecd: PoeCd):
     )
 
 
-def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep=", "):
+def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep: str = ", "):
     s = ""
     operator = filter_.type.casefold()
     if len(filter_.conds) == 0:
@@ -59,7 +59,9 @@ def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep=", "):
     return s
 
 
-def repr_filter_group(filters: list[RecipeFilter], poecd: PoeCd, filter_sep=", "):
+def repr_filter_group(
+    filters: list[RecipeFilter], poecd: PoeCd, filter_sep: str = ", "
+):
     if len(filters) == 1:
         return repr_filter(filters[0], poecd, filter_sep)
     s = ""
@@ -70,7 +72,9 @@ def repr_filter_group(filters: list[RecipeFilter], poecd: PoeCd, filter_sep=", "
     return s
 
 
-def repr_filters(filters: Collection[RecipeFilter], poecd: PoeCd, group_sep=", "):
+def repr_filters(
+    filters: Collection[RecipeFilter], poecd: PoeCd, group_sep: str = ", "
+):
     or_filters: list[list[RecipeFilter]] = [[]]
     for x in filters:
         if x.type.casefold() == "or":
@@ -82,7 +86,7 @@ def repr_filters(filters: Collection[RecipeFilter], poecd: PoeCd, group_sep=", "
     )
 
 
-def repr_step(step: RecipeStep, poecd: PoeCd, indent=""):
+def repr_step(step: RecipeStep, poecd: PoeCd, indent: str = ""):
     return (
         f"{indent}apply {step.method!r}\n"
         f"{indent}on success {step.actions.win} {step.actions.win_route or ''}\n"

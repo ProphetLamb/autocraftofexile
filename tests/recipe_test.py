@@ -1,5 +1,6 @@
 import json
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from autocraftofexile.models.recipe import RecipeData, RecipeSettings, RecipeStep
 from tests import RECIPE_EXAMPLE
@@ -18,7 +19,7 @@ def test_parse_recipe_settings() -> None:
     assert settings.bitem == "8114"
     assert settings.ilvl == 85
     assert settings.rarity == "rare"
-    assert settings.influences == ("3", )
+    assert settings.influences == ("3",)
     assert settings.quality == 20
     assert settings.corrupted == 0
     assert settings.destroyed == 0
@@ -61,21 +62,21 @@ def test_parse_recipe_data() -> None:
     assert poison.atype == "prefix"
     assert poison.id == "611"
     assert poison.mgrp == "3"
-    assert poison.modgroups == ("PoisonDamage", )
+    assert poison.modgroups == ("PoisonDamage",)
     assert poison.weight == "500"
     assert poison.nvalues == "[[37,42]]"
     assert poison.tindex == 0
     assert poison.frac == 0
     assert poison.maven == 0
     assert poison.bench == 0
-    assert poison.rolls == (37, )
+    assert poison.rolls == (37,)
 
     strength = recipe_data.iaffixes[-1]
     assert strength.atype == "suffix"
     assert strength.id == "2336"
-    assert strength.modgroups == ("Strength", )
+    assert strength.modgroups == ("Strength",)
     assert strength.tindex == 2
-    assert strength.rolls == (19, )
+    assert strength.rolls == (19,)
 
     assert recipe_data.meta_flags == {}
     assert recipe_data.imprint is None
@@ -90,10 +91,7 @@ def test_parse_recipe_data() -> None:
 
 
 def test_parse_recipe_config() -> None:
-    config = [
-        RecipeStep.from_dict(entry)
-        for entry in load_recipe_json()["config"]
-    ]
+    config = [RecipeStep.from_dict(entry) for entry in load_recipe_json()["config"]]
 
     assert len(config) == 5
 
@@ -109,7 +107,7 @@ def test_parse_recipe_config() -> None:
     assert scour.actions.fail_route is None
 
     check = config[3]
-    assert check.method == ("check", )
+    assert check.method == ("check",)
     assert check.autopass is False
     assert check.vfilter == ()
     assert check.actions.win == "next"

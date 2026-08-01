@@ -51,7 +51,7 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
 
     except FileNotFoundError:
         logging.debug("begin GUI config prompt")
-        config = prompt_missing_config(GuiConfig(*{}))
+        config = prompt_missing_config(GuiConfig(*{}))  # type: ignore
         logging.debug("done GUI config prompt")
         with open(file, "w", encoding="utf-8") as f:
             json.dump(asdict(config), f, indent=2)

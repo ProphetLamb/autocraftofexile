@@ -5,7 +5,7 @@ from os import PathLike
 
 from autocraftofexile import RECIPE_FILE
 
-from .crafting import CrafterMethod, _find_method
+from .crafting import CrafterMethod, find_crafter_method
 from .models.poecd import PoeCd
 from .models.recipe import Recipe, RecipeCondition, RecipeFilter, RecipeStep
 from .rules import Rule
@@ -49,7 +49,7 @@ def validate_recipe(
             validate_cond(f"{prefix} condition {ci + 1}", cond)
 
     def validate_step(prefix: str, step: RecipeStep):
-        if not _find_method(crafting_methods, step.method):
+        if not find_crafter_method(crafting_methods, step.method):
             errors.append(
                 f"{prefix} could not resolve the crafting method {step.method!r}"
             )

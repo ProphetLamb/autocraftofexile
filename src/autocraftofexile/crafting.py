@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from asyncio import CancelledError
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from types import MappingProxyType
+from types import MappingProxyType, TracebackType
 
 import keyboard
 import pyautogui
@@ -67,8 +67,7 @@ class CraftingWorker:
             self._exit.wait()
         finally:
             for h in hotkeys:
-                if h:
-                    keyboard.remove_hotkey(h)
+                keyboard.remove_hotkey(h)
 
             self.stop()
 
@@ -255,7 +254,7 @@ def _normalize_method(method: Iterable[str | None]) -> tuple[str | None, ...]:
     return tuple(part.casefold() if part else None for part in method)
 
 
-def _find_method(methods: Iterable[CrafterMethod], method: Iterable[str | None]):
+def find_crafter_method(methods: Iterable[CrafterMethod], method: Iterable[str | None]):
     method_signature = _normalize_method(method)
     return next(
         (candidate for candidate in methods if candidate.method == method_signature),
@@ -356,7 +355,12 @@ class Crafter:
     def __enter__(self):
         pass
 
-    def __exit__(self, exception_type, exception_value, exception_traceback):
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        exception_traceback: TracebackType | None,
+    ):
         del exception_type, exception_value, exception_traceback
         if self.dragged_currency:
             self.dragged_currency = None
@@ -442,7 +446,7 @@ class Crafter:
             f"[bright_white]Step {self.step_index + 1}[/bright_white]: {', '.join(x for x in step.method if x)}"
         )
 
-        crafter_method = _find_method(self.crafter_methods, step.method)
+        crafter_method = find_crafter_method(self.crafter_methods, step.method)
         if crafter_method is None:
             raise ValueError(
                 f"Unsupported crafting method at step {self.step_index}: "

@@ -65,7 +65,7 @@ def main(
         crafting_methods=DEFAULT_CRAFTER_METHODS,
     )
     for error in recipe_errors:
-        print("[red]error[/red]")
+        print(f"[red]{error}[/red]")
     if recipe_errors:
         return
 
@@ -73,14 +73,17 @@ def main(
 
     worker = CraftingWorker(config, recipe, poecd, CraftingOptions(speed or 60))
 
-    def sigint(signal, frame):
-        del signal, frame
+    def sigint():
         logging.warning("SIGINT received: terminating worker")
         worker.exit()
         logging.debug("done autocraftofexile")
         logging.shutdown()
         sys.exit(-1)
 
-    signal.signal(signal.SIGINT, sigint)
+    signal.signal(signal.SIGINT, lambda signal, frame: sigint())
     worker.run()
     logging.debug("done autocraftofexile")
+
+
+if __name__ == "__main__":
+    app()
