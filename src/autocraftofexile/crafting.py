@@ -15,7 +15,7 @@ import pyautogui
 import pyperclip
 import pytweening
 import pywinctl as pwc
-import typer
+from rich import print
 
 from .cancellation_token import CancellationToken, CancellationTokenSource
 from .item_match_context import repr_condition
@@ -127,11 +127,11 @@ class CraftingWorker:
         except CancelledError:
             message = "Crafter stopped"
             logging.exception(message)
-            typer.echo(message)
+            print(f"[red]{message}[/red]")
         except Exception:
             message = "Crafter terminated unexpectedly"
             logging.exception(message)
-            typer.echo(message)
+            print(f"[red]{message}[/red]")
 
         finally:
             with self._thread_lock:
@@ -145,7 +145,9 @@ class CraftingWorker:
                     self._exit.cancel()
 
         if not self.is_exit_requested:
-            typer.echo(f"Press {self.config.start_hotkey} to start crafting again")
+            print(
+                f"Press [cyan]{self.config.start_hotkey}[/cyan] to start crafting again"
+            )
 
 
 @dataclass(slots=True, frozen=True)
@@ -330,24 +332,24 @@ class Crafter:
         try:
             self._ensure_window_focus()
         except:
-            typer.echo("Failed to focus Path of Exile")
+            print("[red]Failed to focus Path of Exile[/red]")
             raise
         try:
             self._invoke_step()
         except:
-            typer.echo(f"Failed to invoke crafting step {self.step_index + 1}")
+            print(f"[red]Failed to invoke crafting step {self.step_index + 1}[/red]")
             raise
         item: Item
         try:
             item = self._get_item()
         except:
-            typer.echo("Invalid item copied by CTRL+ALT+C")
+            print("[red]Invalid item copied by CTRL+ALT+C[/red]")
             raise
         result: CraftStepResult
         try:
             result = self.evaluate_item(item)
         except:
-            typer.echo(f"Failed to evaluate crafting step {self.step_index + 1}")
+            print(f"[red]Failed to evaluate crafting step {self.step_index + 1}[/red]")
             raise
         return result
 
@@ -392,9 +394,10 @@ class Crafter:
 
         if not 0 <= self.step_index < len(self.recipe.config):
             raise IndexError(f"Recipe step index out of range: {self.step_index}")
-
         step = self.recipe.config[self.step_index]
-        typer.echo(f"Step {self.step_index + 1}: {step.method!r}")
+        print(
+            f"[bright_white]Step {self.step_index + 1}[/bright_white]: {', '.join(x for x in step.method if x)}"
+        )
 
         crafter_method = _find_method(self.crafter_methods, step.method)
         if crafter_method is None:
@@ -421,7 +424,7 @@ class Crafter:
         if cached_item == item:
             message = "Crafting method unexpectedly left the item unchanged "
             logging.warning(message)
-            typer.echo(message)
+            print(f"[orange]{message}[/orange]")
             raise ValueError(message)
         return item
 
@@ -469,14 +472,11 @@ class Crafter:
 
         done = self.step_index >= len(self.recipe.config)
         if done:
-            typer.echo("Done")
+            print(":sparkles: [green]Done[/green]")
         else:
-            typer.echo(
-                f"{'Success' if match.success else 'Failed'} {action} {route or ''}"
-            )
-        if not match.success:
-            typer.echo(
-                f"Conditions failed {', '.join(repr_condition(x, self.poecd) for x in match.failed)}"
+            print(
+                f"{'[green]Success[/green]' if match.success else '[red]Failed[/red]'}"
+                f" [reset]{', '.join(repr_condition(x, self.poecd) for x in match.failed if not match.success)}[/reset]"
             )
         logging.debug("done goto step")
         return CraftStepResult(match, done)
@@ -502,10 +502,11 @@ class Crafter:
         if self._cached_coords == coords:
             return
         self._cached_coords = coords
+        weight = random.uniform(4, 6)
         pyautogui.moveTo(
             self._position(coords.x),
             self._position(coords.y),
-            duration=self._duration(5 / self.options.speed),
+            duration=self._duration(weight / self.options.speed),
             tween=pytweening.easeInOutElastic,
         )
 

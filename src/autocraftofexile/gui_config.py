@@ -6,7 +6,7 @@ from os import PathLike
 
 import keyboard
 import pyautogui
-import typer
+from rich import print, prompt
 
 from autocraftofexile import GUI_CONFIG_FILE
 
@@ -15,18 +15,17 @@ from .models.gui_config import Coordinates, GuiConfig
 
 def prompt_coordinates(name: str) -> Coordinates:
     time.sleep(0.1)
-    typer.echo()
-    typer.prompt(f"Move mouse to the {name} and press ENTER.")
+    prompt.Confirm.ask(f"Move mouse to the {name} and press ENTER.")
     x, y = pyautogui.position()
-    typer.echo(f"{name}: {x}, {y}")
+    print(f"[bright_white]{name}[/bright_white]: {x}, {y}")
     return Coordinates(x, y)
 
 
 def prompt_hotkey(name: str) -> str:
     time.sleep(0.1)
-    typer.echo(f"\nPress the {name} hotkey.")
+    print(f"\nPress the [bright_white]{name}[/bright_white] hotkey.")
     hotkey = keyboard.read_hotkey(suppress=False)
-    typer.echo(f"{name} hotkey: {hotkey}")
+    print(f"[bright_white]{name}[/bright_white] hotkey: [cyan]{hotkey}[/cyan]")
     return hotkey
 
 
@@ -38,10 +37,10 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
             data = json.load(f)
 
         config = GuiConfig.from_dict(data)
-        typer.echo(
+        print(
             "Successfully loaded gui config\n"
-            f" Start hotkey {config.start_hotkey}\n"
-            f" Stop hotkey {config.stop_hotkey}\n"
+            f" Start hotkey [cyan]{config.start_hotkey}[/cyan]\n"
+            f" Stop hotkey [cyan]{config.start_hotkey}[/cyan]\n"
         )
         return config
 

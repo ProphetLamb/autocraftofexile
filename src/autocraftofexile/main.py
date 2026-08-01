@@ -55,7 +55,7 @@ def main(
     recipe = load_recipe(recipe_file)
 
     r = repr_recipe(recipe, poecd)
-    typer.echo("\n" + r + "\n")
+    print("\n" + r + "\n")
     logging.info(r)
     recipe_errors = validate_recipe(
         recipe,
@@ -65,7 +65,7 @@ def main(
         crafting_methods=DEFAULT_CRAFTER_METHODS,
     )
     for error in recipe_errors:
-        typer.echo(error)
+        print("[red]error[/red]")
     if recipe_errors:
         return
 
