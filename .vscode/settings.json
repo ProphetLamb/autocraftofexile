@@ -1,8 +1,15 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python.testing.pytestArgs": [
-        "tests"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
+	"[python]": {
+		"editor.defaultFormatter": "charliermarsh.ruff",
+		"editor.formatOnSave": true,
+		"editor.codeActionsOnSave": {
+			"source.fixAll.ruff": "explicit",
+			"source.organizeImports.ruff": "explicit"
+		},
+	},
+	"ruff.lint.ignore": ["LOG015"],
+	"python.analysis.typeCheckingMode": "strict",
+	"python.analysis.diagnosticSeverityOverrides": {
+		"reportMissingTypeStubs": "information"
+	},
 }

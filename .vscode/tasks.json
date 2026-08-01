@@ -1,0 +1,50 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "uv: sync",
+            "type": "process",
+            "command": "uv",
+            "args": [
+                "sync",
+                "--extra",
+                "dev"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "test: all",
+            "type": "process",
+            "command": "uv",
+            "args": [
+                "run",
+                "--extra",
+                "dev",
+                "pytest"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "dependsOn": [
+                "uv: sync"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "pre-push",
+            "dependsOn": [
+                "test: all"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ]
+}
