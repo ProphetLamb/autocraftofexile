@@ -79,6 +79,9 @@ New users should start with one of the ready-made recipes in the repository's [`
 - [`recipe_flask_inc_effect.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_flask_inc_effect.json): craft a flask for increased effect.
 - [`recipe_staff_str_stacker_alt_spam.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_staff_str_stacker_alt_spam.json): use alteration crafting for a strength-stacking staff.
 
+> [!TIP]
+> Copy & import a recipe in [Craft of Exile](https://www.craftofexile.com/?game=poe1)'s Simulator, then edit & export it again, to quickly adapt it to your needs.
+
 After cloning the repository, run an example by passing its local path:
 
 ```bash
