@@ -70,7 +70,7 @@ The application does not modify the game client or communicate with the game pro
 
 ## Example recipes
 
-New users should start with one of the ready-made recipes in the repository's [`data/` directory](https://github.com/ProphetLamb/autocraftofexile/tree/main/data). They are useful both as working recipes and as references for exported methods, filters, conditions, and routes.
+New users should start with one of the ready-made recipes in the repository's [`data/` directory](https://github.com/ProphetLamb/autocraftofexile/tree/master/data). They are useful both as working recipes and as references for exported methods, filters, conditions, and routes.
 
 - [`recipe_5link.json`](https://github.com/ProphetLamb/autocraftofexile/blob/master/data/recipe_5link.json): create a five-linked item.
 - [`recipe_5socket.json`](https://github.com/ProphetLamb/autocraftofexile/blob/master/data/recipe_5socket.json): create an item with five sockets.
