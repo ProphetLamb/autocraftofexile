@@ -241,7 +241,6 @@ class CrafterMethod(ABC):
             bool: `True` if the item changed, otherwise; `False`
         """
 
-
 class CrafterMethodCheck(CrafterMethod):
     method = ("check",)
 
@@ -249,20 +248,31 @@ class CrafterMethodCheck(CrafterMethod):
         del crafter
         return False
 
-class CrafterMethodLeftClick(CrafterMethod):
-    method = ("click", "left_click")
-
+class CrafterMethodDragCurrency(CrafterMethod, ABC):
     def invoke(self, crafter: Crafter) -> bool:
+        if crafter.dragged_currency == self.method:
+            crafter.left_click()
+            return True
+        if crafter.dragged_currency:
+            crafter.key_up("shift")
+            crafter.dragged_currency = None
+        self.acquire(crafter)
+        crafter.dragged_currency = self.method
+        crafter.move_to(crafter.config.showcase)
+        crafter.key_down("shift")
         crafter.left_click()
         return True
 
+    @abstractmethod
+    def acquire(self, crafter: Crafter) -> None:
+        raise NotImplementedError()
 
-class CrafterMethodRightClick(CrafterMethod):
-    method = ("click", "right_click")
 
-    def invoke(self, crafter: Crafter) -> bool:
-        crafter.right_click()
-        return True
+class CrafterMethodLeftClick(CrafterMethodDragCurrency):
+    method = ("click", "left_click_drag")
+
+    def acquire(self, crafter: Crafter) -> None:
+        pass
 
 
 def _normalize_method(method: Iterable[str | None]) -> tuple[str | None, ...]:
@@ -296,7 +306,7 @@ def _get_currency_coordinates(
     return coordinate
 
 
-class CrafterMethodCurrency(CrafterMethod):
+class CrafterMethodCurrency(CrafterMethodDragCurrency):
     definition: CurrencyMethodDefinition
 
     def __init__(self, definition: CurrencyMethodDefinition) -> None:
@@ -304,27 +314,16 @@ class CrafterMethodCurrency(CrafterMethod):
         self.definition = definition
         self.method = _normalize_method(definition.method)
 
-    def invoke(self, crafter: Crafter):
-        if crafter.dragged_currency == self.method:
-            crafter.left_click()
-            return True
-        if crafter.dragged_currency:
-            crafter.key_up("shift")
+    def acquire(self, crafter: Crafter) -> None:
         coords = _get_currency_coordinates(self.method, crafter.config)
         showcase = crafter.config.showcase
         crafter.move_to(coords)
         crafter.right_click()
         crafter.move_to(showcase)
-        crafter.dragged_currency = self.method
-        crafter.key_down("shift")
-        crafter.left_click()
-        return True
-
 
 DEFAULT_CRAFTER_METHODS: tuple[CrafterMethod, ...] = (
     CrafterMethodCheck(),
     CrafterMethodLeftClick(),
-    CrafterMethodRightClick(),
     *[CrafterMethodCurrency(method) for method in CURRENCY_METHODS],
 )
 
