@@ -45,7 +45,7 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
         print(
             "Successfully loaded gui config\n"
             f" Start hotkey [cyan]{config.start_hotkey}[/cyan]\n"
-            f" Stop hotkey [cyan]{config.start_hotkey}[/cyan]\n"
+            f" Stop hotkey [cyan]{config.stop_hotkey}[/cyan]\n"
         )
         return config
 

@@ -59,20 +59,16 @@ class CraftingWorker:
         self.is_running = False
 
     def run(self) -> None:
-        start_hotkey = keyboard.add_hotkey(
-            self.config.start_hotkey,
-            self.start,
-        )
-        stop_hotkey = keyboard.add_hotkey(
-            self.config.stop_hotkey,
-            self.stop,
-        )
-
+        hotkeys = [
+            keyboard.add_hotkey(self.config.start_hotkey, self.start),
+            keyboard.add_hotkey(self.config.stop_hotkey, self.stop),
+        ]
         try:
             self._exit.wait()
         finally:
-            keyboard.remove_hotkey(start_hotkey)
-            keyboard.remove_hotkey(stop_hotkey)
+            for h in hotkeys:
+                if h:
+                    keyboard.remove_hotkey(h)
 
             self.stop()
 
@@ -119,12 +115,12 @@ class CraftingWorker:
             crafter = Crafter(
                 self.config, self.recipe, self.poecd, self._stop.token, self.options
             )
+            with crafter:
+                while not self._stop.is_cancelled:
+                    result = crafter.execute()
 
-            while not self._stop.is_cancelled:
-                result = crafter.execute()
-
-                if result.done:
-                    return
+                    if result.done:
+                        return
         except CancelledError:
             message = "Crafter stopped"
             logging.exception(message)
@@ -267,6 +263,25 @@ def _find_method(methods: Iterable[CrafterMethod], method: Iterable[str | None])
     )
 
 
+def _get_currency_coordinates(
+    method: tuple[str | None, ...],
+    config: GuiConfig,
+) -> Coordinates:
+    definition = CURRENCY_METHOD_BY_SIGNATURE.get(method)
+
+    if definition is None:
+        raise ValueError(f"Unsupported currency method: {method!r}")
+
+    coordinate = getattr(config, definition.coord_field, None)
+    if coordinate is None:
+        raise ValueError(
+            f"GuiConfig has no {definition.coord_field!r} coordinate "
+            f"for method {method!r}"
+        )
+
+    return coordinate
+
+
 class CrafterMethodCurrency(CrafterMethod):
     definition: CurrencyMethodDefinition
 
@@ -276,31 +291,20 @@ class CrafterMethodCurrency(CrafterMethod):
         self.method = _normalize_method(definition.method)
 
     def invoke(self, crafter: Crafter):
-        coords = self._get_currency_coordinates(crafter.config)
+        if crafter.dragged_currency == self.method:
+            crafter.left_click()
+            return True
+        if crafter.dragged_currency:
+            crafter.key_up("shift")
+        coords = _get_currency_coordinates(self.method, crafter.config)
         showcase = crafter.config.showcase
         crafter.move_to(coords)
         crafter.right_click()
         crafter.move_to(showcase)
+        crafter.dragged_currency = self.method
+        crafter.key_down("shift")
         crafter.left_click()
         return True
-
-    def _get_currency_coordinates(
-        self,
-        config: GuiConfig,
-    ) -> Coordinates:
-        definition = CURRENCY_METHOD_BY_SIGNATURE.get(self.method)
-
-        if definition is None:
-            raise ValueError(f"Unsupported currency method: {self.method!r}")
-
-        coordinate = getattr(config, definition.coord_field, None)
-        if coordinate is None:
-            raise ValueError(
-                f"GuiConfig has no {definition.coord_field!r} coordinate "
-                f"for method {self.method!r}"
-            )
-
-        return coordinate
 
 
 DEFAULT_CRAFTER_METHODS: tuple[CrafterMethod, ...] = (
@@ -316,6 +320,7 @@ class Crafter:
     options: CraftingOptions
     step_index: int = 0
     crafter_methods: tuple[CrafterMethod, ...]
+    dragged_currency: tuple[str | None, ...] | None
     _current_item: Item | None
     _cached_text: str | None
     _cached_item: Item | None
@@ -339,6 +344,7 @@ class Crafter:
         self.poecd = poecd
         self.options = options
         self.step_index = step_index
+        self.dragged_currency = None
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
         self._current_item = None
         self._cached_text = None
@@ -347,7 +353,17 @@ class Crafter:
         self._stopping_token = stopping_token
         self._stats = {}
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        del exception_type, exception_value, exception_traceback
+        if self.dragged_currency:
+            self.dragged_currency = None
+            pyautogui.keyUp("shift")
+
     def execute(self):
+        logging.debug("begin executing step %d", self.step_index)
         try:
             self._ensure_window_focus()
         except:
@@ -355,7 +371,9 @@ class Crafter:
             self.print_stats_table()
             raise
         try:
-            self._invoke_step()
+            item_changed = self._invoke_step()
+            if item_changed:
+                self._ensure_item_changed()
         except:
             print(f"[red]Failed to invoke crafting step {self.step_index + 1}[/red]")
             self.print_stats_table()
@@ -376,6 +394,7 @@ class Crafter:
             raise
         if result.done:
             self.print_stats_table()
+        logging.debug("done executing step")
         return result
 
     def _get_item(self) -> Item:
@@ -415,11 +434,10 @@ class Crafter:
 
     def _invoke_step(self):
         logging.debug("begin invoke step %d", self.step_index)
-        self._stopping_token.throw_if_cancelled()
-
         if not 0 <= self.step_index < len(self.recipe.config):
             raise IndexError(f"Recipe step index out of range: {self.step_index}")
         step = self.recipe.config[self.step_index]
+        self._stopping_token.throw_if_cancelled()
         print(
             f"[bright_white]Step {self.step_index + 1}[/bright_white]: {', '.join(x for x in step.method if x)}"
         )
@@ -433,8 +451,6 @@ class Crafter:
 
         item_changed = crafter_method.invoke(self)
         self._stats[step.method] = self._stats.setdefault(step.method, 0) + 1
-        if item_changed:
-            self._ensure_item_changed()
 
         logging.debug(
             "done invoke step %d using method %r",
@@ -467,7 +483,7 @@ class Crafter:
         matcher = ItemMatcher(step, self.recipe.data, self.poecd)
         result = matcher.evaluate(item)
 
-        logging.debug("done evaluating item %s", result)
+        logging.debug("done evaluating item %s", repr(result))
         if result.success:
             return self._goto_step(result, step.actions.win, step.actions.win_route)
         else:
@@ -558,3 +574,13 @@ class Crafter:
         pyautogui.hotkey(
             *keys, interval=self._duration(1 / len(keys) / self.options.speed)
         )
+
+    def key_down(self, key: str):
+        self._stopping_token.throw_if_cancelled()
+        pyautogui.keyDown(key)
+        time.sleep(self._duration(1 / self.options.speed))
+
+    def key_up(self, key: str):
+        self._stopping_token.throw_if_cancelled()
+        pyautogui.keyUp(key)
+        time.sleep(self._duration(1 / self.options.speed))

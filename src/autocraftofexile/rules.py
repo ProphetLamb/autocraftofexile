@@ -1,3 +1,4 @@
+import logging
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -74,7 +75,7 @@ class NamedRule(Rule, ABC):
         del filter_
 
         match = self.match(context)
-
+        logging.debug("named rule match result %s", repr(match))
         return self.result(
             in_condition_range(match.value, condition),
             condition,
