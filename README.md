@@ -72,14 +72,12 @@ The application does not modify the game client or communicate with the game pro
 
 New users should start with one of the ready-made recipes in the repository's [`data/` directory](https://github.com/ProphetLamb/autocraftofexile/tree/main/data). They are useful both as working recipes and as references for exported methods, filters, conditions, and routes.
 
-- [`recipe_5link.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_5link.json): create a five-linked item.
-- [`recipe_5socket.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_5socket.json): create an item with five sockets.
-- [`recipe_6link.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_6link.json): create a six-linked item.
-- [`recipe_6socket.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_6socket.json): create an item with six sockets.
-- [`recipe_example.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_example.json): a broader reference demonstrating the supported recipe structure.
+- [`recipe_5link.json`](https://github.com/ProphetLamb/autocraftofexile/blob/master/data/recipe_5link.json): create a five-linked item.
+- [`recipe_5socket.json`](https://github.com/ProphetLamb/autocraftofexile/blob/master/data/recipe_5socket.json): create an item with five sockets.
+- [`recipe_6link.json`](https://github.com/ProphetLamb/autocraftofexile/blob/master/data/recipe_6link.json): create a six-linked item.
+- [`recipe_6socket.json`](https://github.com/ProphetLamb/autocraftofexile/blob/master/data/recipe_6socket.json): create an item with six sockets.
 - [`recipe_flask_inc_effect.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_flask_inc_effect.json): craft a flask for increased effect.
 - [`recipe_staff_str_stacker_alt_spam.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe_staff_str_stacker_alt_spam.json): use alteration crafting for a strength-stacking staff.
-- [`recipe.json`](https://github.com/ProphetLamb/autocraftofexile/blob/main/data/recipe.json): the repository's default recipe file.
 
 After cloning the repository, run an example by passing its local path:
 
