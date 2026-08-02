@@ -2,6 +2,12 @@
 
 Automatically executes a [Craft of Exile](https://www.craftofexile.com/?game=poe1) Simulator recipe in [Path of Exile](https://www.pathofexile.com/).
 
+| `%# increased Effect` Flask | Mageblood relevant flask |
+| --- | --- |
+| <img width="505" height="848" alt="image" src="https://github.com/user-attachments/assets/ef537c74-d845-425b-a9d4-92ec0b37a888" /> | <img width="1093" height="985" alt="image" src="https://github.com/user-attachments/assets/cec9f5cc-80e7-4a4d-bf36-8be1bfd89d17" /> |
+
+
+
 > [!WARNING]
 > Auto Craft of Exile controls the mouse and keyboard. Remain at the computer, keep the stop hotkey available, and test new recipes with inexpensive materials first.
 
