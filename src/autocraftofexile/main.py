@@ -6,14 +6,16 @@ import sys
 from typing import Annotated
 
 import typer
+from rich import print
+from rich.live import Live
 
 from autocraftofexile import GUI_CONFIG_FILE, LOG_FILE, POECD_FILE, RECIPE_FILE
 
 from .crafting import DEFAULT_CRAFTER_METHODS, CraftingOptions, CraftingWorker
 from .gui_config import load_gui_config
-from .item_match_context import repr_recipe
 from .poecd_loader import load_poecd_data
 from .recipe_loader import load_recipe, validate_recipe
+from .rich_recipe import RichRecipe, repr_recipe
 from .rules import DEFAULT_RULES
 
 app = typer.Typer(
@@ -53,36 +55,35 @@ def main(
     logging.debug("begin autocraftofexile")
     poecd = load_poecd_data(poecd_data_file)
     recipe = load_recipe(recipe_file)
-
-    r = repr_recipe(recipe, poecd)
-    print("\n" + r + "\n")
-    logging.info(r)
-    recipe_errors = validate_recipe(
-        recipe,
-        poecd,
-        filter_logic_types={"and", "or", "not"},
-        modifier_rules=DEFAULT_RULES,
-        crafting_methods=DEFAULT_CRAFTER_METHODS,
-    )
-    for error in recipe_errors:
-        print(f"[red]{error}[/red]")
-    if recipe_errors:
-        return
-
     config = load_gui_config(gui_file)
 
-    worker = CraftingWorker(config, recipe, poecd, CraftingOptions(speed or 60))
+    print()
+    logging.info(repr_recipe(recipe, poecd, {}))
+    with Live(repr_recipe(recipe, poecd, {})) as live:
+        rr = RichRecipe(recipe, poecd, [], {}, live)
+        recipe_errors = validate_recipe(
+            recipe,
+            poecd,
+            filter_logic_types={"and", "or", "not"},
+            modifier_rules=DEFAULT_RULES,
+            crafting_methods=DEFAULT_CRAFTER_METHODS,
+        )
+        rr.appendix.extend(f"[red]{error}[/red]" for error in recipe_errors)
+        rr.update()
+        if recipe_errors:
+            return
+        worker = CraftingWorker(CraftingOptions(speed or 60, rr, config, recipe, poecd))
 
-    def sigint():
-        logging.warning("SIGINT received: terminating worker")
-        worker.exit()
+        def sigint():
+            logging.warning("SIGINT received: terminating worker")
+            worker.exit()
+            logging.debug("done autocraftofexile")
+            logging.shutdown()
+            sys.exit(-1)
+
+        signal.signal(signal.SIGINT, lambda signal, frame: sigint())
+        worker.run()
         logging.debug("done autocraftofexile")
-        logging.shutdown()
-        sys.exit(-1)
-
-    signal.signal(signal.SIGINT, lambda signal, frame: sigint())
-    worker.run()
-    logging.debug("done autocraftofexile")
 
 
 if __name__ == "__main__":

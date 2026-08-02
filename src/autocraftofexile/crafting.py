@@ -15,53 +15,48 @@ import pyautogui
 import pyperclip
 import pytweening
 import pywinctl as pwc
-from rich import print
-from rich.table import Table
+from rich.console import RenderableType
 
 from .cancellation_token import CancellationToken, CancellationTokenSource
-from .item_match_context import repr_condition
 from .item_matcher import ItemMatcher, ItemMatchResult
 from .item_parser import parse_item
 from .models.gui_config import Coordinates, GuiConfig
 from .models.item import Item
 from .models.poecd import PoeCd
 from .models.recipe import Recipe
+from .rich_recipe import RichRecipe, StepStatus, repr_stat_table
 
 
 @dataclass
 class CraftingOptions:
     speed: int
+    rich_recipe: RichRecipe
+    config: GuiConfig
+    recipe: Recipe
+    poecd: PoeCd
 
 
 class CraftingWorker:
     _stop: CancellationTokenSource
     _exit: CancellationTokenSource
     _thread: threading.Thread | None
-    config: GuiConfig
-    recipe: Recipe
-    poecd: PoeCd
     options: CraftingOptions
     is_exit_requested: bool
     is_running: bool
 
-    def __init__(
-        self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, options: CraftingOptions
-    ) -> None:
+    def __init__(self, options: CraftingOptions) -> None:
         self._stop = CancellationTokenSource()
         self._exit = CancellationTokenSource()
         self._thread_lock = threading.Lock()
         self._thread = None
-        self.config = config
-        self.recipe = recipe
-        self.poecd = poecd
         self.options = options
         self.is_exit_requested = False
         self.is_running = False
 
     def run(self) -> None:
         hotkeys = [
-            keyboard.add_hotkey(self.config.start_hotkey, self.start),
-            keyboard.add_hotkey(self.config.stop_hotkey, self.stop),
+            keyboard.add_hotkey(self.options.config.start_hotkey, self.start),
+            keyboard.add_hotkey(self.options.config.stop_hotkey, self.stop),
         ]
         try:
             self._exit.wait()
@@ -107,13 +102,18 @@ class CraftingWorker:
             if thread is not None and thread.is_alive():
                 self._stop.cancel()
 
+    def _clean_rich_recipe(self):
+        rr = self.options.rich_recipe
+        rr.appendix = []
+        rr.status = {}
+        rr.update()
+
     def _main(self) -> None:
         current_thread = threading.current_thread()
 
         try:
-            crafter = Crafter(
-                self.config, self.recipe, self.poecd, self._stop.token, self.options
-            )
+            self._clean_rich_recipe()
+            crafter = Crafter(self._stop.token, self.options)
             with crafter:
                 while not self._stop.is_cancelled:
                     result = crafter.execute()
@@ -123,11 +123,11 @@ class CraftingWorker:
         except CancelledError:
             message = "Crafter stopped"
             logging.exception(message)
-            print(f"[red]{message}[/red]")
+            self.options.rich_recipe.update(append=f"[red]{message}[/red]")
         except Exception:
             message = "Crafter terminated unexpectedly"
             logging.exception(message)
-            print(f"[red]{message}[/red]")
+            self.options.rich_recipe.update(append=f"[red]{message}[/red]")
 
         finally:
             with self._thread_lock:
@@ -141,8 +141,8 @@ class CraftingWorker:
                     self._exit.cancel()
 
         if not self.is_exit_requested:
-            print(
-                f"Press [cyan]{self.config.start_hotkey}[/cyan] to start crafting again"
+            self.options.rich_recipe.update(
+                append=f"Press [cyan]{self.options.config.start_hotkey}[/cyan] to start crafting again"
             )
 
 
@@ -241,12 +241,14 @@ class CrafterMethod(ABC):
             bool: `True` if the item changed, otherwise; `False`
         """
 
+
 class CrafterMethodCheck(CrafterMethod):
     method = ("check",)
 
     def invoke(self, crafter: Crafter) -> bool:
         del crafter
         return False
+
 
 class CrafterMethodDragCurrency(CrafterMethod, ABC):
     def invoke(self, crafter: Crafter) -> bool:
@@ -258,7 +260,7 @@ class CrafterMethodDragCurrency(CrafterMethod, ABC):
             crafter.dragged_currency = None
         self.acquire(crafter)
         crafter.dragged_currency = self.method
-        crafter.move_to(crafter.config.showcase)
+        crafter.move_to(crafter.options.config.showcase)
         crafter.key_down("shift")
         crafter.left_click()
         return True
@@ -315,11 +317,12 @@ class CrafterMethodCurrency(CrafterMethodDragCurrency):
         self.method = _normalize_method(definition.method)
 
     def acquire(self, crafter: Crafter) -> None:
-        coords = _get_currency_coordinates(self.method, crafter.config)
-        showcase = crafter.config.showcase
+        coords = _get_currency_coordinates(self.method, crafter.options.config)
+        showcase = crafter.options.config.showcase
         crafter.move_to(coords)
         crafter.right_click()
         crafter.move_to(showcase)
+
 
 DEFAULT_CRAFTER_METHODS: tuple[CrafterMethod, ...] = (
     CrafterMethodCheck(),
@@ -329,9 +332,6 @@ DEFAULT_CRAFTER_METHODS: tuple[CrafterMethod, ...] = (
 
 
 class Crafter:
-    config: GuiConfig
-    recipe: Recipe
-    poecd: PoeCd
     options: CraftingOptions
     step_index: int = 0
     crafter_methods: tuple[CrafterMethod, ...]
@@ -345,18 +345,12 @@ class Crafter:
 
     def __init__(
         self,
-        config: GuiConfig,
-        recipe: Recipe,
-        poecd: PoeCd,
         stopping_token: CancellationToken,
         options: CraftingOptions,
         *,
         step_index: int = 0,
         crafter_methods: tuple[CrafterMethod, ...] | None = None,
     ):
-        self.config = config
-        self.recipe = recipe
-        self.poecd = poecd
         self.options = options
         self.step_index = step_index
         self.dragged_currency = None
@@ -382,38 +376,47 @@ class Crafter:
             self.dragged_currency = None
             pyautogui.keyUp("shift")
 
+    def _print_with_stat_table(self, message: RenderableType):
+        self.options.rich_recipe.appendix.extend(
+            [
+                message,
+                repr_stat_table(self._stats),
+            ]
+        )
+        self.options.rich_recipe.update()
+
     def execute(self):
         logging.debug("begin executing step %d", self.step_index)
         try:
             self._ensure_window_focus()
         except:
-            print("[red]Failed to focus Path of Exile[/red]")
-            self.print_stats_table()
+            self._print_with_stat_table("[red]Failed to focus Path of Exile[/red]")
             raise
         try:
             item_changed = self._invoke_step()
             if item_changed:
                 self._ensure_item_changed()
         except:
-            print(f"[red]Failed to invoke crafting step {self.step_index + 1}[/red]")
-            self.print_stats_table()
+            self._print_with_stat_table(
+                f"[red]Failed to invoke crafting step {self.step_index + 1}[/red]"
+            )
             raise
         item: Item
         try:
             item = self._get_item()
         except:
-            print("[red]Invalid item copied by CTRL+ALT+C[/red]")
-            self.print_stats_table()
+            self._print_with_stat_table("[red]Invalid item copied by CTRL+ALT+C[/red]")
             raise
         result: CraftStepResult
         try:
             result = self.evaluate_item(item)
         except:
-            print(f"[red]Failed to evaluate crafting step {self.step_index + 1}[/red]")
-            self.print_stats_table()
+            self._print_with_stat_table(
+                f"[red]Failed to evaluate crafting step {self.step_index + 1}[/red]"
+            )
             raise
         if result.done:
-            self.print_stats_table()
+            self.options.rich_recipe.update(repr_stat_table(self._stats))
         logging.debug("done executing step")
         return result
 
@@ -424,7 +427,7 @@ class Crafter:
             logging.debug("end get item using cached item")
             return self._current_item
 
-        showcase = self.config.showcase
+        showcase = self.options.config.showcase
 
         self.move_to(showcase)
         self.hotkey("ctrl", "alt", "c")
@@ -454,12 +457,12 @@ class Crafter:
 
     def _invoke_step(self):
         logging.debug("begin invoke step %d", self.step_index)
-        if not 0 <= self.step_index < len(self.recipe.config):
+        if not 0 <= self.step_index < len(self.options.recipe.config):
             raise IndexError(f"Recipe step index out of range: {self.step_index}")
-        step = self.recipe.config[self.step_index]
+        step = self.options.recipe.config[self.step_index]
         self._stopping_token.throw_if_cancelled()
-        print(
-            f"[bright_white]Step {self.step_index + 1}[/bright_white]: {', '.join(x for x in step.method if x)}"
+        self.options.rich_recipe.status[step] = StepStatus(
+            active=True,
         )
 
         crafter_method = find_crafter_method(self.crafter_methods, step.method)
@@ -486,7 +489,7 @@ class Crafter:
         if cached_item == item:
             message = "Crafting method unexpectedly left the item unchanged "
             logging.warning(message)
-            print(f"[orange]{message}[/orange]")
+            self.options.rich_recipe.update(append=f"[orange]{message}[/orange]")
             raise ValueError(message)
         return item
 
@@ -494,13 +497,13 @@ class Crafter:
         logging.debug("begin evaluating item %s", repr(item))
         self._stopping_token.throw_if_cancelled()
 
-        step = self.recipe.config[self.step_index]
+        step = self._current_step
         if step.autopass:
             logging.debug("done evaluating step autopass")
             return self._goto_step(
                 ItemMatchResult(True), step.actions.win, step.actions.win_route
             )
-        matcher = ItemMatcher(step, self.recipe.data, self.poecd)
+        matcher = ItemMatcher(step, self.options.recipe.data, self.options.poecd)
         result = matcher.evaluate(item)
 
         logging.debug("done evaluating item %s", repr(result))
@@ -509,10 +512,19 @@ class Crafter:
         else:
             return self._goto_step(result, step.actions.fail, step.actions.fail_route)
 
+    @property
+    def _current_step(self):
+        return self.options.recipe.config[self.step_index]
+
     def _goto_step(
         self, match: ItemMatchResult, action: str, route: str | None
     ) -> CraftStepResult:
         logging.debug("begin goto step action=%s route=%s", action, route)
+        self.options.rich_recipe.status[self._current_step] = StepStatus(
+            active=False,
+            result=match,
+            status_info=f"[cyan]Goto {action} {route or ''}[/cyan]",
+        )
 
         action = action.casefold()
         if action == "loop":
@@ -522,7 +534,7 @@ class Crafter:
         elif action == "next":
             self.step_index += 1
         elif action == "end":
-            self.step_index = len(self.recipe.config)
+            self.step_index = len(self.options.recipe.config)
         elif action == "step":
             if route == None:
                 raise ValueError(
@@ -532,25 +544,16 @@ class Crafter:
         else:
             raise ValueError(f"Unknown action {action}")
 
-        done = self.step_index >= len(self.recipe.config)
-        if done:
-            print(":sparkles: [green]Done[/green]\n")
-        else:
-            print(
-                f"{'[green]Success[/green]' if match.success else '[red]Failed[/red]'}"
-                f" [reset]{', '.join(repr_condition(x, self.poecd) for x in match.failed if not match.success)}[/reset]"
+        done = self.step_index >= len(self.options.recipe.config)
+        if not done:
+            self.options.rich_recipe.status[self._current_step] = StepStatus(
+                active=True,
             )
+        self.options.rich_recipe.update(
+            append=":sparkles: [green]Done[/green]" if done else None
+        )
         logging.debug("done goto step")
         return CraftStepResult(match, done)
-
-    def print_stats_table(self):
-        table = Table(title="Crafting Costs")
-        table.add_column("Method", justify="right", style="bright_white", no_wrap=True)
-        table.add_column("Count", style="cyan")
-        for method, count in self._stats.items():
-            if method != ("check",):
-                table.add_row(", ".join(x for x in method if x), repr(count))
-        print(table)
 
     def _ensure_window_focus(self):
         poe = pwc.getWindowsWithTitle("Path of Exile").pop()
@@ -559,7 +562,7 @@ class Crafter:
         if poe != pwc.getActiveWindow():
             logging.info("Path of Exile is not focussed")
             poe.activate(wait=True)
-            self.move_to(self.config.showcase)
+            self.move_to(self.options.config.showcase)
             self.right_click()
 
     def _duration(self, duration: float) -> float:

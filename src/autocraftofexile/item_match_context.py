@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Collection
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from .item_parser import ITEM_DETAIL_BY_RARITY, RarityItemDetails
 from .models.item import Item, ItemModifier
 from .models.poecd import PoeCd
-from .models.recipe import Recipe, RecipeCondition, RecipeData, RecipeFilter, RecipeStep
+from .models.recipe import RecipeCondition, RecipeData
 
 RecipeConditions = set[RecipeCondition]
 
@@ -22,88 +22,6 @@ _DAMAGE_RANGE_RE = re.compile(
     r"\s*-\s*"
     rf"(?P<maximum>{_NUMBER_RE.pattern})"
 )
-
-
-def repr_condition(cond: RecipeCondition, poecd: PoeCd):
-    if not cond.id.isdigit():
-        return f"'{cond.id}({cond.treshold or ''}..{cond.max or ''})'"
-    modifier = poecd.modifiers.get(cond.id)
-    tier_suffix = f" tier>={cond.treshold}" if (cond.treshold or 0) > 1 else ""
-    return (
-        f"'{modifier.name_modifier}{tier_suffix}'"
-        if modifier != None
-        else f"'#{cond.id}{tier_suffix}'"
-    )
-
-
-def repr_filter(filter_: RecipeFilter, poecd: PoeCd, filter_sep: str = ", "):
-    s = ""
-    operator = filter_.type.casefold()
-    if len(filter_.conds) == 0:
-        return "AUTOPASS"
-    if len(filter_.conds) == 1 and (filter_.treshold or 1) == 1:
-        return repr_condition(filter_.conds[0], poecd)
-    if filter_.treshold == None:
-        s += "ALL OF" if operator != "not" else "NONE OF"
-    else:
-        s += (
-            f"At LEAST {filter_.treshold} OF"
-            if operator != "not"
-            else f"FEWER THAN {filter_.treshold} OF"
-        )
-    s += (
-        "("
-        + filter_sep.join(repr_condition(cond, poecd) for cond in filter_.conds)
-        + ")"
-    )
-    return s
-
-
-def repr_filter_group(
-    filters: list[RecipeFilter], poecd: PoeCd, filter_sep: str = ", "
-):
-    if len(filters) == 1:
-        return repr_filter(filters[0], poecd, filter_sep)
-    s = ""
-    for filter_ in filters:
-        if len(s) != 0:
-            s += " AND "
-        s += repr_filter(filter_, poecd, filter_sep)
-    return s
-
-
-def repr_filters(
-    filters: Collection[RecipeFilter], poecd: PoeCd, group_sep: str = ", "
-):
-    or_filters: list[list[RecipeFilter]] = [[]]
-    for x in filters:
-        if x.type.casefold() == "or":
-            or_filters.append([x])
-        else:
-            or_filters[-1].append(x)
-    return f"{group_sep}OR ".join(
-        "(" + repr_filter_group(and_filters, poecd) + ")" for and_filters in or_filters
-    )
-
-
-def repr_step(step: RecipeStep, poecd: PoeCd, indent: str = ""):
-    return (
-        f"{indent}apply {step.method!r}\n"
-        f"{indent}on success {step.actions.win} {step.actions.win_route or ''}\n"
-        f"{indent}on failure {step.actions.fail} {step.actions.fail_route or ''}\n"
-        f"{indent}filters:\n"
-        f"{indent}  {repr_filters(step.filters, poecd, '\n' + indent + '  ') if step.filters and not step.autopass else 'AUTOPASS'}"
-    )
-
-
-def repr_recipe(recipe: Recipe, poecd: PoeCd):
-    influences = " ".join(
-        poecd.mgroups[inf].name_mgroup for inf in recipe.settings.influences
-    )
-    return (
-        f"Crafting {poecd.bitems[recipe.settings.bitem].name_bitem} ilvl {recipe.settings.ilvl} {influences}{' influence' if influences else ''}"
-        f"\n{'\n\n'.join(f'Step {i + 1}\n' + repr_step(step, poecd, indent='  ') for i, step in enumerate(recipe.config))}"
-    )
 
 
 def _repr_condition_set(conditions: RecipeConditions) -> str:
