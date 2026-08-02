@@ -8,9 +8,7 @@ name = "autocraftofexile"
 version = "0.1.3"
 description = "Console application for automating Craft of Exile recipes"
 readme = "README.md"
-authors = [
-    { name = "ProphetLamb", email = "prophet.lamb@gmail.com" }
-]
+authors = [{ name = "ProphetLamb", email = "prophet.lamb@gmail.com" }]
 license = "MIT AND (Apache-2.0 OR BSD-2-Clause)"
 urls = { Repository = "https://github.com/ProphetLamb/autocraftofexile.git", GitHub = "https://github.com/ProphetLamb/autocraftofexile" }
 
@@ -45,5 +43,4 @@ pythonpath = ["src"]
 addopts = ["--import-mode=importlib", "-ra"]
 
 [tool.uv.workspace]
-members = [
-]
+members = []

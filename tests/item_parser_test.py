@@ -72,8 +72,10 @@ def test_parse_clipboard_example_rare() -> None:
             tier=3,
             attributes=("Chaos", "Attack", "Ailment"),
             text=(
-                "+37(37-42)% to Damage over Time Multiplier for Poison "
-                "inflicted with this Weapon",
+                (
+                    "+37(37-42)% to Damage over Time Multiplier for Poison "
+                    "inflicted with this Weapon"
+                ),
             ),
         ),
         ItemModifier(
@@ -97,8 +99,10 @@ def test_parse_clipboard_example_rare() -> None:
             attributes=("Damage", "Attack", "Critical"),
             text=(
                 "25(22-25)% increased Critical Strike Chance",
-                "+50% to Critical Strike Multiplier if you haven't dealt a "
-                "Critical Strike Recently",
+                (
+                    "+50% to Critical Strike Multiplier if you haven't dealt a "
+                    "Critical Strike Recently"
+                ),
                 "(Recently refers to the past 4 seconds)",
             ),
         ),
