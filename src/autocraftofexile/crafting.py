@@ -15,7 +15,6 @@ import pyautogui
 import pyperclip
 import pytweening
 import pywinctl as pwc
-from rich.console import RenderableType
 
 from .cancellation_token import CancellationToken, CancellationTokenSource
 from .item_matcher import ItemMatcher, ItemMatchResult
@@ -24,7 +23,7 @@ from .models.gui_config import Coordinates, GuiConfig
 from .models.item import Item
 from .models.poecd import PoeCd
 from .models.recipe import Recipe
-from .rich_recipe import RichRecipe, StepStatus, repr_stat_table
+from .rich_recipe import RichRecipe, StepStatus
 
 
 @dataclass
@@ -341,7 +340,6 @@ class Crafter:
     _cached_item: Item | None
     _cached_coords: Coordinates | None
     _stopping_token: CancellationToken
-    _stats: dict[tuple[str | None, ...], int]
 
     def __init__(
         self,
@@ -376,28 +374,19 @@ class Crafter:
             self.dragged_currency = None
             pyautogui.keyUp("shift")
 
-    def _print_with_stat_table(self, message: RenderableType):
-        self.options.rich_recipe.appendix.extend(
-            [
-                message,
-                repr_stat_table(self._stats),
-            ]
-        )
-        self.options.rich_recipe.update()
-
     def execute(self):
         logging.debug("begin executing step %d", self.step_index)
         try:
             self._ensure_window_focus()
         except:
-            self._print_with_stat_table("[red]Failed to focus Path of Exile[/red]")
+            self.options.rich_recipe.update("[red]Failed to focus Path of Exile[/red]")
             raise
         try:
             item_changed = self._invoke_step()
             if item_changed:
                 self._ensure_item_changed()
         except:
-            self._print_with_stat_table(
+            self.options.rich_recipe.update(
                 f"[red]Failed to invoke crafting step {self.step_index + 1}[/red]"
             )
             raise
@@ -405,18 +394,18 @@ class Crafter:
         try:
             item = self._get_item()
         except:
-            self._print_with_stat_table("[red]Invalid item copied by CTRL+ALT+C[/red]")
+            self.options.rich_recipe.update(
+                "[red]Invalid item copied by CTRL+ALT+C[/red]"
+            )
             raise
         result: CraftStepResult
         try:
             result = self.evaluate_item(item)
         except:
-            self._print_with_stat_table(
+            self.options.rich_recipe.update(
                 f"[red]Failed to evaluate crafting step {self.step_index + 1}[/red]"
             )
             raise
-        if result.done:
-            self.options.rich_recipe.update(repr_stat_table(self._stats))
         logging.debug("done executing step")
         return result
 
@@ -473,7 +462,7 @@ class Crafter:
             )
 
         item_changed = crafter_method.invoke(self)
-        self._stats[step.method] = self._stats.setdefault(step.method, 0) + 1
+        self.options.rich_recipe.inc_stat(step.method)
 
         logging.debug(
             "done invoke step %d using method %r",

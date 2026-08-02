@@ -164,6 +164,7 @@ def repr_recipe(
                 title=f"Step {i + 1}",
                 title_align="left",
                 border_style=_step_border_style(statusByStep.get(step)),
+                expand=False,
             )
             for i, step in enumerate(recipe.config)
         ],
@@ -176,6 +177,7 @@ class RichRecipe:
     poecd: PoeCd
     appendix: list[RenderableType]
     status: dict[RecipeStep, StepStatus]
+    stats: dict[tuple[str | None, ...], int]
     live: Live
 
     def update(self, append: RenderableType | None = None):
@@ -184,4 +186,11 @@ class RichRecipe:
         self.live.update(self.repr_renderable())
 
     def repr_renderable(self) -> RenderableType:
-        return Group(repr_recipe(self.recipe, self.poecd, self.status), *self.appendix)
+        return Group(
+            repr_recipe(self.recipe, self.poecd, self.status),
+            repr_stat_table(self.stats),
+            *self.appendix,
+        )
+
+    def inc_stat(self, method: tuple[str | None, ...]):
+        self.stats[method] = self.stats.setdefault(method, 0) + 1

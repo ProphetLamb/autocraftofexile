@@ -60,7 +60,7 @@ def main(
     print()
     logging.info(repr_recipe(recipe, poecd, {}))
     with Live(repr_recipe(recipe, poecd, {})) as live:
-        rr = RichRecipe(recipe, poecd, [], {}, live)
+        rr = RichRecipe(recipe, poecd, [], {}, {}, live)
         recipe_errors = validate_recipe(
             recipe,
             poecd,
