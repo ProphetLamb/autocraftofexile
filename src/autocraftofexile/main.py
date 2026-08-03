@@ -11,19 +11,19 @@ from rich.live import Live
 
 from autocraftofexile import GUI_CONFIG_FILE, LOG_FILE, POECD_FILE, RECIPE_FILE
 
-from .crafting import DEFAULT_CRAFTER_METHODS, CraftingOptions, CraftingWorker
+from .crafting import CraftingOptions
+from .currency_crafting_worker import CurrencyCraftingWorker
 from .gui_config import load_gui_config
 from .poecd_loader import load_poecd_data
-from .recipe_loader import load_recipe, validate_recipe
+from .recipe_loader import load_recipe
 from .rich_recipe import RichRecipe, repr_recipe
-from .rules import DEFAULT_RULES
 
 app = typer.Typer(
     suggest_commands=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
 
 
-@app.callback(invoke_without_command=True)
+@app.command()
 def main(
     speed: Annotated[
         int, typer.Option("--speed", help="The number of actions per second")
@@ -61,18 +61,9 @@ def main(
     logging.info(repr_recipe(recipe, poecd, {}))
     with Live(repr_recipe(recipe, poecd, {})) as live:
         rr = RichRecipe(recipe, poecd, [], {}, {}, live)
-        recipe_errors = validate_recipe(
-            recipe,
-            poecd,
-            filter_logic_types={"and", "or", "not"},
-            modifier_rules=DEFAULT_RULES,
-            crafting_methods=DEFAULT_CRAFTER_METHODS,
+        worker = CurrencyCraftingWorker(
+            CraftingOptions(speed or 60, rr, config, recipe, poecd)
         )
-        rr.appendix.extend(f"[red]{error}[/red]" for error in recipe_errors)
-        rr.update()
-        if recipe_errors:
-            return
-        worker = CraftingWorker(CraftingOptions(speed or 60, rr, config, recipe, poecd))
 
         def sigint():
             logging.warning("SIGINT received: terminating worker")
