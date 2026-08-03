@@ -335,7 +335,7 @@ class ModifierPresentRule(Rule):
                 context.normalized_modifier_text,
                 strict=True,
             )
-            if (filter_.treshold is None or item_modifier.tier >= filter_.treshold)
+            if (filter_.treshold is None or item_modifier.tier <= filter_.treshold)
             and self._matches(patterns, text, condition)
         }
         return self.result(bool(modifiers), condition, text_modifiers=modifiers)
