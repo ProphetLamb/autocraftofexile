@@ -22,6 +22,8 @@ from .models.poecd import PoeCd
 from .models.recipe import Recipe
 from .rich_recipe import RichRecipe, StepStatus
 
+_logger = logging.getLogger(__name__)
+
 
 @dataclass
 class CraftingOptions:
@@ -262,7 +264,7 @@ class Crafter:
             pyautogui.keyUp("shift")
 
     def execute(self):
-        logging.debug("begin executing step %d", self.step_index)
+        _logger.debug("begin executing step %d", self.step_index)
         try:
             self._ensure_window_focus()
         except:
@@ -293,14 +295,14 @@ class Crafter:
                 f"[red]Failed to evaluate crafting step {self.step_index + 1}[/red]"
             )
             raise
-        logging.debug("done executing step")
+        _logger.debug("done executing step")
         return result
 
     def _get_item(self) -> Item:
-        logging.debug("begin get item")
+        _logger.debug("begin get item")
         self._stopping_token.throw_if_cancelled()
         if self._current_item:
-            logging.debug("end get item using cached item")
+            _logger.debug("end get item using cached item")
             return self._current_item
 
         showcase = self.options.config.showcase
@@ -317,7 +319,7 @@ class Crafter:
 
         item = self._cached_item
         if item and self._cached_text == text:
-            logging.debug(
+            _logger.debug(
                 "item remain unchanged by the crafting method texts are equal %s\n\n%s",
                 self._cached_text,
                 text,
@@ -328,11 +330,11 @@ class Crafter:
         self._cached_text = text
         self._cached_item = item
         self._current_item = item
-        logging.debug("done get item")
+        _logger.debug("done get item")
         return item
 
     def _invoke_step(self):
-        logging.debug("begin invoke step %d", self.step_index)
+        _logger.debug("begin invoke step %d", self.step_index)
         if not 0 <= self.step_index < len(self.options.recipe.config):
             raise IndexError(f"Recipe step index out of range: {self.step_index}")
         step = self.options.recipe.config[self.step_index]
@@ -351,7 +353,7 @@ class Crafter:
         item_changed = crafter_method.invoke(self)
         self.options.rich_recipe.inc_stat(step.method)
 
-        logging.debug(
+        _logger.debug(
             "done invoke step %d using method %r",
             self.step_index,
             repr(step.method),
@@ -364,25 +366,25 @@ class Crafter:
         item = self._get_item()
         if cached_item == item:
             message = "Crafting method unexpectedly left the item unchanged "
-            logging.warning(message)
+            _logger.warning(message)
             self.options.rich_recipe.update(append=f"[orange]{message}[/orange]")
             raise ValueError(message)
         return item
 
     def evaluate_item(self, item: Item) -> CraftStepResult:
-        logging.debug("begin evaluating item %s", repr(item))
+        _logger.debug("begin evaluating item %s", repr(item))
         self._stopping_token.throw_if_cancelled()
 
         step = self._current_step
         if step.autopass:
-            logging.debug("done evaluating step autopass")
+            _logger.debug("done evaluating step autopass")
             return self._goto_step(
                 ItemMatchResult(True), step.actions.win, step.actions.win_route
             )
         matcher = ItemMatcher(step, self.options.recipe.data, self.options.poecd)
         result = matcher.evaluate(item)
 
-        logging.debug("done evaluating item %s", repr(result))
+        _logger.debug("done evaluating item %s", repr(result))
         if result.success:
             return self._goto_step(result, step.actions.win, step.actions.win_route)
         else:
@@ -395,7 +397,7 @@ class Crafter:
     def _goto_step(
         self, match: ItemMatchResult, action: str, route: str | None
     ) -> CraftStepResult:
-        logging.debug("begin goto step action=%s route=%s", action, route)
+        _logger.debug("begin goto step action=%s route=%s", action, route)
         self.options.rich_recipe.status[self._current_step] = StepStatus(
             active=False,
             result=match,
@@ -428,7 +430,7 @@ class Crafter:
         self.options.rich_recipe.update(
             append=":sparkles: [green]Done[/green]" if done else None
         )
-        logging.debug("done goto step")
+        _logger.debug("done goto step")
         return CraftStepResult(match, done)
 
     def _ensure_window_focus(self):
@@ -436,7 +438,7 @@ class Crafter:
         if poe == None:
             raise ValueError("Path of Exile is not running")
         if poe != pwc.getActiveWindow():
-            logging.info("Path of Exile is not focussed")
+            _logger.info("Path of Exile is not focussed")
             poe.activate(wait=True)
             self.move_to(self.options.config.showcase)
             self.right_click()

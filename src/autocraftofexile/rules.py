@@ -15,6 +15,8 @@ from .item_match_context import (
 from .models.item import ItemModifier
 from .models.recipe import RecipeCondition, RecipeFilter
 
+_logger = logging.getLogger(__name__)
+
 
 class Rule(ABC):
     @abstractmethod
@@ -75,7 +77,7 @@ class NamedRule(Rule, ABC):
         del filter_
 
         match = self.match(context)
-        logging.debug("named rule match result %s", repr(match))
+        _logger.debug("named rule match result %s", repr(match))
         return self.result(
             in_condition_range(match.value, condition),
             condition,

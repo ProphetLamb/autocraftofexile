@@ -23,6 +23,18 @@ app = typer.Typer(
 )
 
 
+def _setup_logging(log_file: str):
+    logging.basicConfig(
+        filename=log_file,
+        format="%(asctime)s|%(levelname)s|%(name)s|%(message)s",
+        encoding="utf-8",
+        level=logging.DEBUG,
+    )
+    logger = logging.getLogger(__name__)
+    atexit.register(logging.shutdown)
+    return logger
+
+
 @app.command()
 def main(
     speed: Annotated[
@@ -45,20 +57,14 @@ def main(
         os.makedirs(log_dir, exist_ok=True)
     if (poecd_dir := os.path.dirname(poecd_data_file)) != "":
         os.makedirs(poecd_dir, exist_ok=True)
-    logging.basicConfig(
-        filename=log_file,
-        format="%(asctime)s|%(levelname)s|%(message)s",
-        encoding="utf-8",
-        level=logging.DEBUG,
-    )
-    atexit.register(logging.shutdown)
-    logging.debug("begin autocraftofexile")
+    logger = _setup_logging(log_file)
+    logger.debug("begin autocraftofexile")
     poecd = load_poecd_data(poecd_data_file)
     recipe = load_recipe(recipe_file)
     config = load_gui_config(gui_file)
 
     print()
-    logging.info(repr_recipe(recipe, poecd, {}))
+    logger.info(repr_recipe(recipe, poecd, {}))
     with Live(repr_recipe(recipe, poecd, {})) as live:
         rr = RichRecipe(recipe, poecd, [], {}, {}, live)
         worker = CurrencyCraftingWorker(
@@ -66,15 +72,15 @@ def main(
         )
 
         def sigint():
-            logging.warning("SIGINT received: terminating worker")
+            logger.warning("SIGINT received: terminating worker")
             worker.exit()
-            logging.debug("done autocraftofexile")
+            logger.debug("done autocraftofexile")
             logging.shutdown()
             sys.exit(-1)
 
         signal.signal(signal.SIGINT, lambda signal, frame: sigint())
         worker.run()
-        logging.debug("done autocraftofexile")
+    logger.debug("done autocraftofexile")
 
 
 if __name__ == "__main__":

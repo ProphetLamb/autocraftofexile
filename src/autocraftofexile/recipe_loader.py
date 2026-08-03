@@ -3,23 +3,31 @@ import logging
 from collections.abc import Iterable
 from os import PathLike
 
-from autocraftofexile import RECIPE_FILE
+from rich.prompt import Prompt
 
 from .crafting import CrafterMethod, find_crafter_method
 from .models.poecd import PoeCd
 from .models.recipe import Recipe, RecipeCondition, RecipeFilter, RecipeStep
 from .rules import Rule
 
+_logger = logging.getLogger(__name__)
 
-def load_recipe(file: PathLike[str] | str | None = None) -> Recipe:
+
+def load_recipe(file: PathLike[str] | str) -> Recipe:
     data = None
-    logging.debug("begin Recipe data file read")
-    with open(file or RECIPE_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    logging.debug("done Recipe data file read")
+    _logger.debug("begin Recipe data file read")
+    try:
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = Prompt.ask(
+            f"[red]No recipe found at {file!r}[/red]\n"
+            "[bright_white]Please export your [link=https://www.craftofexile.com/?game=poe1][i]Craft of Exile[/i][/link] Simulator, and paste the JSON here.[/bright_white] Confirm with ENTER:"
+        )
+        data = json.loads(data)
+    _logger.debug("done Recipe data file read")
     recipe = Recipe.from_dict(data)
-    logging.debug("done Recipe data parse")
+    _logger.debug("done Recipe data parse")
     return recipe
 
 
@@ -30,7 +38,7 @@ def validate_recipe(
     crafting_methods: Iterable[CrafterMethod],
     modifier_rules: Iterable[Rule],
 ):
-    logging.debug("begin validating recipe")
+    _logger.debug("begin validating recipe")
     errors: list[str] = []
 
     def validate_cond(prefix: str, cond: RecipeCondition):
@@ -58,5 +66,5 @@ def validate_recipe(
 
     for si, step in enumerate(recipe.config):
         validate_step(f"Step {si + 1}", step)
-    logging.debug("done validating recipe %s", repr(errors))
+    _logger.debug("done validating recipe %s", repr(errors))
     return errors

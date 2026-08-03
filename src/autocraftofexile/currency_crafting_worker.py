@@ -12,6 +12,8 @@ from .cancellation_token import CancellationTokenSource
 from .crafting import DEFAULT_CRAFTER_METHODS, Crafter, CraftingOptions
 from .recipe_loader import validate_recipe
 
+_logger = logging.getLogger(__name__)
+
 
 class CurrencyCraftingWorker:
     _stop: CancellationTokenSource
@@ -111,11 +113,11 @@ class CurrencyCraftingWorker:
                         return
         except CancelledError:
             message = "Crafter stopped"
-            logging.exception(message)
+            _logger.exception(message)
             self.options.rich_recipe.update(append=f"[red]{message}[/red]")
         except Exception:
             message = "Crafter terminated unexpectedly"
-            logging.exception(message)
+            _logger.exception(message)
             self.options.rich_recipe.update(append=f"[red]{message}[/red]")
 
         finally:

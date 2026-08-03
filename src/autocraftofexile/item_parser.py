@@ -37,6 +37,8 @@ _PROPERTY_NAMES = {
     "Weapon Range": "weapon_range",
 }
 
+_logger = logging.getLogger(__name__)
+
 
 class RarityItemDetails(ABC):
     rarity: str
@@ -126,7 +128,7 @@ ITEM_DETAIL_BY_RARITY = MappingProxyType(
 
 
 def parse_item(text: str) -> Item:
-    logging.debug("begin parse item text=%s", text)
+    _logger.debug("begin parse item text=%s", text)
     lines = [line.strip() for line in text.replace("\r\n", "\n").split("\n")]
     lines = [line for line in lines if line]
     if not lines:
@@ -189,7 +191,7 @@ def parse_item(text: str) -> Item:
         modifiers=modifiers,
         status=status,
     )
-    logging.debug("done parse item item=%s", repr(item))
+    _logger.debug("done parse item item=%s", repr(item))
     return item
 
 

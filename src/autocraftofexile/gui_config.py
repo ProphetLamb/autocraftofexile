@@ -8,9 +8,9 @@ import keyboard
 import pyautogui
 from rich import print
 
-from autocraftofexile import GUI_CONFIG_FILE
-
 from .models.gui_config import Coordinates, GuiConfig
+
+_logger = logging.getLogger(__name__)
 
 
 def prompt_coordinates(name: str) -> Coordinates:
@@ -29,8 +29,7 @@ def prompt_hotkey(name: str) -> str:
     return hotkey
 
 
-def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
-    file = file or GUI_CONFIG_FILE
+def load_gui_config(file: PathLike[str] | str) -> GuiConfig:
     try:
         data = None
         with open(file, "r", encoding="utf-8") as f:
@@ -50,13 +49,13 @@ def load_gui_config(file: PathLike[str] | str | None = None) -> GuiConfig:
         return config
 
     except FileNotFoundError:
-        logging.debug("begin GUI config prompt")
+        _logger.debug("begin GUI config prompt")
         config = prompt_missing_config(GuiConfig(*{}))  # type: ignore
-        logging.debug("done GUI config prompt")
+        _logger.debug("done GUI config prompt")
         with open(file, "w", encoding="utf-8") as f:
             json.dump(asdict(config), f, indent=2)
 
-        logging.debug("done GUI config file write")
+        _logger.debug("done GUI config file write")
         return config
 
 
