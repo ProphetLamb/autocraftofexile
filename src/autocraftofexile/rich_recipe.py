@@ -60,13 +60,19 @@ def repr_condition(
             f"[{style}]'{cond.id}({cond.treshold or ''}..{cond.max or ''})'[/{style}]"
         )
     modifier = poecd.modifiers.get(cond.id)
-    tier_suffix = f" tier>={cond.treshold}" if (cond.treshold or 0) > 1 else ""
+    tier_suffix = (
+        f" AT LEAST TIER {cond.treshold}"
+        if (cond.treshold or 0) > 1
+        else " TIER 1"
+        if (cond.treshold or 0) == 1
+        else ""
+    )
     return (
         f"[{style}]"
         f"{
-            f"'{modifier.name_modifier}{tier_suffix}'"
+            f"'{modifier.name_modifier}'{tier_suffix}"
             if modifier != None
-            else f"'#{cond.id}{tier_suffix}'"
+            else f"'#{cond.id}'{tier_suffix}"
         }"
         f"[/{style}]"
     )
@@ -85,14 +91,14 @@ def repr_filter(
         s += "ALL OF" if operator != "not" else "NONE OF"
     else:
         s += (
-            f"At LEAST {filter_.treshold} OF"
+            f"AT LEAST {filter_.treshold} OF"
             if operator != "not"
             else f"FEWER THAN {filter_.treshold} OF"
         )
     s += (
-        "("
+        "(\n    "
         + "\n    ".join(repr_condition(cond, poecd, status) for cond in filter_.conds)
-        + ")"
+        + "\n  )"
     )
     return s
 
@@ -102,11 +108,14 @@ def repr_filter_group(
 ) -> str:
     if len(filters) == 1:
         return repr_filter(filters[0], poecd, status)
-    s = ""
-    for filter_ in filters:
-        if len(s) != 0:
-            s += " AND "
+    if len(filters) == 0:
+        return ""
+    s = "\n  "
+    for i, filter_ in enumerate(filters):
+        if i != 0:
+            s += "\n  AND "
         s += repr_filter(filter_, poecd, status)
+    s += "\n"
     return s
 
 
@@ -133,7 +142,7 @@ def repr_step(
         f"on success {step.actions.win} {step.actions.win_route or ''}\n"
         f"on failure {step.actions.fail} {step.actions.fail_route or ''}\n"
         f"filters:\n"
-        f"  {repr_filters(step.filters, poecd, status) if step.filters and not step.autopass else 'AUTOPASS'}",
+        f"{repr_filters(step.filters, poecd, status) if step.filters and not step.autopass else 'AUTOPASS'}",
         status.status_info if status and status.status_info else " ",
     )
 
