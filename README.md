@@ -228,7 +228,7 @@ click, left_click_drag
 - `left_click_drag` performs one left click at the current showcase position
 
 > [!IMPORTANT]
-> Click methods retain the item on the cursor. <kbd>SHIFT<kbd/> is pressed before clicking, and released only after the condition is fulfilled.
+> Click methods retain the item on the cursor. <kbd>SHIFT</kbd> is pressed before clicking, and released only after the condition is fulfilled.
 
 They are treated as item-changing actions. After either click, Auto Craft of Exile copies the item and verifies that it differs from the previously cached item. If the copied item did not change, execution stops with `Crafting method unexpectedly left the item unchanged`.
 
