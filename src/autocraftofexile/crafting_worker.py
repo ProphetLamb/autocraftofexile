@@ -3,27 +3,32 @@ from __future__ import annotations
 import logging
 import threading
 from asyncio import CancelledError
+from collections.abc import Callable
 
 import keyboard
 
-from autocraftofexile.rules import DEFAULT_RULES
-
-from .cancellation_token import CancellationTokenSource
+from .cancellation_token import CancellationToken, CancellationTokenSource
 from .crafting import DEFAULT_CRAFTER_METHODS, Crafter, CraftingOptions
 from .recipe_loader import validate_recipe
+from .rules import DEFAULT_RULES
 
 _logger = logging.getLogger(__name__)
 
 
-class CurrencyCraftingWorker:
+class CraftingWorker:
     _stop: CancellationTokenSource
     _exit: CancellationTokenSource
     _thread: threading.Thread | None
     options: CraftingOptions
     is_exit_requested: bool
     is_running: bool
+    crafter_factory: Callable[[CraftingOptions, CancellationToken], Crafter]
 
-    def __init__(self, options: CraftingOptions) -> None:
+    def __init__(
+        self,
+        crafter_factory: Callable[[CraftingOptions, CancellationToken], Crafter],
+        options: CraftingOptions,
+    ) -> None:
         self._stop = CancellationTokenSource()
         self._exit = CancellationTokenSource()
         self._thread_lock = threading.Lock()
@@ -31,6 +36,7 @@ class CurrencyCraftingWorker:
         self.options = options
         self.is_exit_requested = False
         self.is_running = False
+        self.crafter_factory = crafter_factory
 
     def run(self) -> None:
         rr = self.options.rich_recipe
@@ -104,7 +110,7 @@ class CurrencyCraftingWorker:
 
         try:
             self._clean_rich_recipe()
-            crafter = Crafter(self._stop.token, self.options)
+            crafter = self.crafter_factory(self.options, self._stop.token)
             with crafter:
                 while not self._stop.is_cancelled:
                     result = crafter.execute()

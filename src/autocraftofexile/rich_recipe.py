@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Collection
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import rich.box
 from rich.console import Group, RenderableType
@@ -184,10 +184,14 @@ def repr_recipe(
 class RichRecipe:
     recipe: Recipe
     poecd: PoeCd
-    appendix: list[RenderableType]
-    status: dict[RecipeStep, StepStatus]
-    stats: dict[tuple[str | None, ...], int]
     live: Live
+    appendix: list[RenderableType] = field(default_factory=list[RenderableType])
+    status: dict[RecipeStep, StepStatus] = field(
+        default_factory=dict[RecipeStep, StepStatus]
+    )
+    stats: dict[tuple[str | None, ...], int] = field(
+        default_factory=dict[tuple[str | None, ...], int]
+    )
 
     def update(self, append: RenderableType | None = None):
         if append:

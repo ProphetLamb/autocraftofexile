@@ -3,6 +3,7 @@ import logging
 import os
 import signal
 import sys
+from collections.abc import Callable
 from typing import Annotated
 
 import typer
@@ -11,12 +12,14 @@ from rich.live import Live
 
 from autocraftofexile import GUI_CONFIG_FILE, LOG_FILE, POECD_FILE, RECIPE_FILE
 
-from .crafting import CraftingOptions
-from .currency_crafting_worker import CurrencyCraftingWorker
+from .cancellation_token import CancellationToken
+from .crafting import Crafter, CraftingOptions
+from .crafting_worker import CraftingWorker
 from .gui_config import load_gui_config
 from .poecd_loader import load_poecd_data
 from .recipe_loader import load_recipe
 from .rich_recipe import RichRecipe, repr_recipe
+from .showcase_crafter import ShowcaseCrafter
 
 app = typer.Typer(
     suggest_commands=True, context_settings={"help_option_names": ["-h", "--help"]}
@@ -40,7 +43,7 @@ def main(
     speed: Annotated[
         int, typer.Option("--speed", help="The number of actions per second")
     ] = 60,
-    poecd_data_file: Annotated[
+    poecd_file: Annotated[
         str, typer.Option("--poecd", help="Path to the pocd.json file")
     ] = str(POECD_FILE),
     recipe_file: Annotated[
@@ -53,22 +56,41 @@ def main(
         LOG_FILE
     ),
 ):
+    crafter(
+        speed,
+        poecd_file,
+        recipe_file,
+        gui_file,
+        log_file,
+        lambda o, ct: ShowcaseCrafter(o, ct),
+    )
+
+
+def crafter(
+    speed: int,
+    poecd_file: str,
+    recipe_file: str,
+    gui_file: str,
+    log_file: str,
+    crafter_factory: Callable[[CraftingOptions, CancellationToken], Crafter],
+):
     if (log_dir := os.path.dirname(log_file)) != "":
         os.makedirs(log_dir, exist_ok=True)
-    if (poecd_dir := os.path.dirname(poecd_data_file)) != "":
+    if (poecd_dir := os.path.dirname(poecd_file)) != "":
         os.makedirs(poecd_dir, exist_ok=True)
     logger = _setup_logging(log_file)
     logger.debug("begin autocraftofexile")
-    poecd = load_poecd_data(poecd_data_file)
+    poecd = load_poecd_data(poecd_file)
     recipe = load_recipe(recipe_file)
     config = load_gui_config(gui_file)
 
     print()
     logger.info(repr_recipe(recipe, poecd, {}))
     with Live(repr_recipe(recipe, poecd, {})) as live:
-        rr = RichRecipe(recipe, poecd, [], {}, {}, live)
-        worker = CurrencyCraftingWorker(
-            CraftingOptions(speed or 60, rr, config, recipe, poecd)
+        rr = RichRecipe(recipe, poecd, live)
+        worker = CraftingWorker(
+            crafter_factory,
+            CraftingOptions(speed, rr, config, recipe, poecd),
         )
 
         def sigint():
