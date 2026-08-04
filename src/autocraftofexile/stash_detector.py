@@ -43,6 +43,8 @@ class _Fragment:
 class StashSpriteDetector:
     """Detect item sprites directly in image space.
 
+    Adjust maximum_sprite_width and maximum_sprite_height according to the screensize, defaults assume 1920x1080
+
     The detector does not use stash-cell occupancy or any fixture layout. It:
     1. removes the two dominant stash backgrounds (dark empty and dark red);
     2. extracts visible sprite fragments;
@@ -54,10 +56,10 @@ class StashSpriteDetector:
         self,
         *,
         minimum_fragment_area: int = 10,
-        minimum_sprite_area: int = 45,
+        minimum_sprite_area: int = 20,
         fragment_gap: int = 2,
         maximum_sprite_width: int = 68,
-        maximum_sprite_height: int = 100,
+        maximum_sprite_height: int = 128,
     ) -> None:
         self.minimum_fragment_area = minimum_fragment_area
         self.minimum_sprite_area = minimum_sprite_area
@@ -66,95 +68,30 @@ class StashSpriteDetector:
         self.maximum_sprite_height = maximum_sprite_height
 
     def detect(self, image: np.ndarray) -> tuple[SpriteDetection, ...]:
-        bounds = self._detect_stash_bounds(image)
-        mask = self._foreground_mask(image, bounds)
-        fragments = self._extract_fragments(mask, bounds)
+        mask = self._foreground_mask(image)
+        fragments = self._extract_fragments(mask)
         groups = self._merge_fragments(fragments)
-        detections = self._groups_to_detections(groups, mask, bounds)
+        detections = self._groups_to_detections(groups, mask)
         return tuple(sorted(detections, key=lambda item: (item.top, item.left)))
 
     @staticmethod
-    def _detect_stash_bounds(image: np.ndarray) -> tuple[int, int, int, int]:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        x_gradient = np.mean(np.abs(np.diff(gray, axis=1)), axis=0)
-        y_gradient = np.mean(np.abs(np.diff(gray, axis=0)), axis=1)
-        height, width = gray.shape
-        margin_x = max(12, width // 12)
-        margin_y = max(12, height // 12)
-        return (
-            int(np.argmax(x_gradient[:margin_x])) + 1,
-            int(np.argmax(y_gradient[:margin_y])) + 1,
-            width - int(np.argmax(x_gradient[-margin_x:][::-1])) - 1,
-            height - int(np.argmax(y_gradient[-margin_y:][::-1])) - 1,
-        )
+    def _foreground_mask(image: np.ndarray) -> np.ndarray:
+        image = 255 - cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, otsu = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        _, binary = cv2.threshold(image, 150, 255, cv2.THRESH_BINARY_INV)
+        image = otsu + binary
+        kernel = np.ones((2, 2), np.uint8)
+        kernel[1][1] = 0
+        image = cv2.morphologyEx(image, cv2.MORPH_DILATE, kernel)
+        image = cv2.morphologyEx(image, cv2.MORPH_ERODE, kernel, iterations=2)
+        return image
 
-    @staticmethod
-    def _foreground_mask(
-        image: np.ndarray,
-        bounds: tuple[int, int, int, int],
-    ) -> np.ndarray:
-        blue, green, red = cv2.split(image.astype(np.int16))
-        maximum = np.maximum(np.maximum(blue, green), red)
-        minimum = np.minimum(np.minimum(blue, green), red)
-        chroma = maximum - minimum
-
-        # Item artwork is brighter or more chromatic than both stash
-        # backgrounds. The second clause retains pale metallic artwork.
-        colorful = (maximum >= 46) & (chroma >= 11)
-        metallic = (maximum >= 76) & ((maximum - minimum) >= 5)
-        red_background = (
-            (red >= 24) & (red < 92) & (red >= green * 1.45) & (red >= blue * 1.45)
-        )
-        mask = ((colorful | metallic) & ~red_background).astype(np.uint8) * 255
-
-        left, top, right, bottom = bounds
-        outside = np.ones(mask.shape, dtype=bool)
-        outside[top:bottom, left:right] = False
-        mask[outside] = 0
-
-        # Remove the border and regular grid lines before morphology so they
-        # cannot connect unrelated sprites.
-        mask[max(0, top - 2) : top + 3, :] = 0
-        mask[max(0, bottom - 2) : bottom + 3, :] = 0
-        mask[:, max(0, left - 2) : left + 3] = 0
-        mask[:, max(0, right - 2) : right + 3] = 0
-
-        cell_width = (right - left) / 24
-        cell_height = (bottom - top) / 24
-        for index in range(1, 24):
-            x = round(left + index * cell_width)
-            y = round(top + index * cell_height)
-            # Only remove the darkest pixels on grid lines. Bright sprite
-            # pixels crossing a line are preserved.
-            vertical = mask[:, max(0, x - 1) : x + 2]
-            vertical_dark = maximum[:, max(0, x - 1) : x + 2] < 42
-            vertical[vertical_dark] = 0
-            horizontal = mask[max(0, y - 1) : y + 2, :]
-            horizontal_dark = maximum[max(0, y - 1) : y + 2, :] < 42
-            horizontal[horizontal_dark] = 0
-
-        mask = cv2.morphologyEx(
-            mask,
-            cv2.MORPH_CLOSE,
-            cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)),
-        )
-        return mask
-
-    def _extract_fragments(
-        self,
-        mask: np.ndarray,
-        bounds: tuple[int, int, int, int],
-    ) -> list[_Fragment]:
+    def _extract_fragments(self, mask: np.ndarray) -> list[_Fragment]:
         count, _, stats, _ = cv2.connectedComponentsWithStats(mask)
-        left, top, right, bottom = bounds
         fragments: list[_Fragment] = []
         for index in range(1, count):
             x, y, width, height, area = (int(value) for value in stats[index])
             if area < self.minimum_fragment_area:
-                continue
-            if x <= left + 2 or y <= top + 2:
-                continue
-            if x + width >= right - 2 or y + height >= bottom - 2:
                 continue
             if width > self.maximum_sprite_width or height > self.maximum_sprite_height:
                 continue
@@ -235,12 +172,8 @@ class StashSpriteDetector:
         return groups
 
     def _groups_to_detections(
-        self,
-        groups: Iterable[list[_Fragment]],
-        mask: np.ndarray,
-        bounds: tuple[int, int, int, int],
+        self, groups: Iterable[list[_Fragment]], mask: np.ndarray
     ) -> list[SpriteDetection]:
-        left_bound, top_bound, right_bound, bottom_bound = bounds
         detections: list[SpriteDetection] = []
         for group in groups:
             left = min(fragment.left for fragment in group)
@@ -250,14 +183,9 @@ class StashSpriteDetector:
             area = sum(fragment.area for fragment in group)
             width = right - left
             height = bottom - top
-            if area < self.minimum_sprite_area or width < 6 or height < 6:
+            if area < self.minimum_sprite_area or width < 2 or height < 2:
                 continue
             if width > self.maximum_sprite_width or height > self.maximum_sprite_height:
-                continue
-            if not (
-                left_bound < left < right < right_bound
-                and top_bound < top < bottom < bottom_bound
-            ):
                 continue
 
             patch = mask[top:bottom, left:right]
@@ -282,6 +210,19 @@ class StashSpriteDetector:
                 )
             )
         return detections
+
+
+def annotate_fragment(image: np.ndarray, fragments: Iterable[_Fragment]):
+    annotated = image.copy()
+    for _index, detection in enumerate(fragments, start=0):
+        cv2.rectangle(
+            annotated,
+            (detection.left, detection.top),
+            (detection.right, detection.bottom),
+            (0, 255, 0),
+            1,
+        )
+    return annotated
 
 
 def annotate_detections(
