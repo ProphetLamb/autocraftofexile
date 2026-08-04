@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from types import TracebackType
 
-import pyautogui
 import pyperclip
 
 from .cancellation_token import CancellationToken
@@ -51,20 +49,6 @@ class ShowcaseCrafter(Crafter):
         self._cached_coords = None
         self.stopping_token = stopping_token
         self._stats = {}
-
-    def __enter__(self):
-        pass
-
-    def __exit__(
-        self,
-        exception_type: type[BaseException] | None,
-        exception_value: BaseException | None,
-        exception_traceback: TracebackType | None,
-    ):
-        del exception_type, exception_value, exception_traceback
-        if self.dragged_currency:
-            self.dragged_currency = None
-            pyautogui.keyUp("shift")
 
     @property
     def crafting_target(self) -> Coordinates:

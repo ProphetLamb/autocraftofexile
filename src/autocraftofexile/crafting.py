@@ -220,18 +220,19 @@ class Crafter(ABC):
     stopping_token: CancellationToken
     dragged_currency: tuple[str | None, ...] | None
 
-    @abstractmethod
     def __enter__(self) -> None:
-        raise NotImplementedError()
+        pass
 
-    @abstractmethod
     def __exit__(
         self,
         exception_type: type[BaseException] | None,
         exception_value: BaseException | None,
         exception_traceback: TracebackType | None,
     ) -> None:
-        raise NotImplementedError()
+        del exception_type, exception_value, exception_traceback
+        if self.dragged_currency:
+            self.dragged_currency = None
+            pyautogui.keyUp("shift")
 
     @property
     @abstractmethod
