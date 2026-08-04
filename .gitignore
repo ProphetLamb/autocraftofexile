@@ -3,6 +3,7 @@ __pycache__/
 /data/poecd_data.json
 /data/recipe.json
 /data/gui.json
+/data/test_*
 /.vscode/PythonImportHelper-v2-Completion.json
 *.log
 *.egg-info/
