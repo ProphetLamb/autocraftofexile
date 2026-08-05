@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Self
 
 import cv2
@@ -75,5 +75,5 @@ class GuiTab(ABC):
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name(),
-            "items": {name: dict(*coords) for name, coords in self.items},
+            "items": {name: asdict(coords) for name, coords in self.items.items()},
         }

@@ -25,9 +25,15 @@ class SparseArray[T]:
         item_factory: Callable[[Mapping[str, Any]], T],
     ) -> Self:
         return cls(
-            seq=tuple[T](item_factory(item) for item in data.get("seq") or []),
+            seq=tuple[T](
+                item_factory(item)
+                for item in data.get("seq") or list[Mapping[str, Any]]()
+            ),
             ind=MappingProxyType(
-                {str(key): int(index) for key, index in (data.get("ind") or {}).items()}
+                {
+                    key: index
+                    for key, index in (data.get("ind") or dict[str, int]()).items()
+                }
             ),
         )
 
