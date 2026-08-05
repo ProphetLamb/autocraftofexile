@@ -69,8 +69,8 @@ class GuiConfig:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         config = cls(
-            start_hotkey=data.get("start_hotkey"),  # pyright: ignore[reportArgumentType]
-            stop_hotkey=data.get("stop_hotkey"),  # pyright: ignore[reportArgumentType]
+            start_hotkey=data.get("start_hotkey") or "",
+            stop_hotkey=data.get("stop_hotkey") or "",
         )
         for raw_tab in data.get("tabs") or list[Any]():
             name = raw_tab.get("name")
@@ -81,15 +81,21 @@ class GuiConfig:
                 _logger.error("Unknown tab name %s", name)
         return config
 
-    def prompt_missing_config(self):
+    def prompt_missing_config(self) -> bool:
+        changed = False
         if not self.start_hotkey:
             self.start_hotkey = prompt_hotkey("start")
+            changed = True
         if not self.stop_hotkey:
+            changed = True
             self.stop_hotkey = prompt_hotkey("stop")
         for tab in self.tabs.values():
             if not tab.is_valid:
+                changed = True
                 tab.detect()
         if not WellknownTabs.currency_general in self.tabs:
             tab = CurrencyGeneralTab()
             tab.detect()
             self.add_tab(tab)
+            changed = True
+        return changed

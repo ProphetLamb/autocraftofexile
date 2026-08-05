@@ -139,6 +139,12 @@ class TabOverlaySelector:
     HANDLE_HIT_PADDING = 3
     MINIMUM_SIZE = 48
 
+    # Tk stipple patterns simulate alpha on canvas primitives. gray75 means
+    # roughly 75 percent of the dark fill is drawn outside the selection.
+    OUTSIDE_MASK_FILL = "#050708"
+    OUTSIDE_MASK_STIPPLE = "gray75"
+    SELECTION_OUTLINE = "#62f59a"
+
     HANDLE_CURSORS: ClassVar[Mapping[str, str]] = {
         "nw": "top_left_corner",
         "n": "top_side",
@@ -180,6 +186,7 @@ class TabOverlaySelector:
         if screenshot.ndim != 3 or screenshot.shape[2] != 3:
             raise ValueError("Expected a BGR screenshot")
 
+        screen_height, screen_width = screenshot.shape[:2]
         window = tk.Tk()
         window.title(self.definition.title)
         window.attributes("-fullscreen", True)  # type: ignore
@@ -188,6 +195,8 @@ class TabOverlaySelector:
         background = self._background_photo(tk, screenshot)
         canvas = tk.Canvas(
             window,
+            width=screen_width,
+            height=screen_height,
             cursor="crosshair",
             highlightthickness=0,
         )
@@ -198,14 +207,12 @@ class TabOverlaySelector:
             anchor=tk.NW,
             image=background,
         )
-        canvas.create_text(
-            18,
-            18,
-            anchor=tk.NW,
-            text=self.definition.instructions,
-            fill="white",
-            font=("Segoe UI", 13, "bold"),
-        )
+
+        # Persistent, high-contrast instruction panel. A shadow and solid dark
+        # backing keep the text readable over both bright and dark screenshots.
+        instruction_margin = 12
+        instruction_top = 12
+        instruction_height = 48
 
         state = _State()
 
@@ -236,6 +243,7 @@ class TabOverlaySelector:
                     return name
             return None
 
+        @staticmethod
         def selection_contains(
             box: OverlaySelection,
             x: int,
@@ -246,26 +254,20 @@ class TabOverlaySelector:
         def set_cursor(cursor: str) -> None:
             if canvas.cget("cursor") == cursor:
                 return
-
             try:
                 canvas.configure(cursor=cursor)
             except tk.TclError:
-                # Cursor names vary slightly between Tk/platform versions.
-                # Falling back keeps selection usable on reduced cursor sets.
                 canvas.configure(cursor="crosshair")
 
         def cursor_for_position(x: int, y: int) -> str:
             box = state.selection
             if box is None:
                 return "crosshair"
-
             handle = hit_handle(x, y)
             if handle is not None:
                 return self.HANDLE_CURSORS[handle]
-
             if selection_contains(box, x, y):
                 return "fleur"
-
             return "crosshair"
 
         def cursor_for_mode(
@@ -279,10 +281,8 @@ class TabOverlaySelector:
             return "crosshair"
 
         def update_cursor(event: tk.Event) -> None:
-            # Lock the operation cursor for the duration of a drag.
-            if state.mode is not None:
-                return
-            set_cursor(cursor_for_position(event.x, event.y))
+            if state.mode is None:
+                set_cursor(cursor_for_position(event.x, event.y))
 
         def mouse_leave(_event: tk.Event) -> None:
             if state.mode is None:
@@ -292,6 +292,7 @@ class TabOverlaySelector:
             for identifier in state.rendered:
                 canvas.delete(identifier)
             state.rendered = []
+            render_instructions()
 
         def item_bounds(
             item: OverlayItem,
@@ -308,41 +309,112 @@ class TabOverlaySelector:
                 round(center_y + height / 2),
             )
 
+        def draw_outside_mask(box: OverlaySelection) -> None:
+            """Darken everything except the selected rectangle."""
+            mask_options = {
+                "fill": self.OUTSIDE_MASK_FILL,
+                "stipple": self.OUTSIDE_MASK_STIPPLE,
+                "outline": "",
+            }
+            rectangles = (
+                (0, 0, screen_width, box.top),
+                (0, box.bottom, screen_width, screen_height),
+                (0, box.top, box.left, box.bottom),
+                (box.right, box.top, screen_width, box.bottom),
+            )
+            for left, top, right, bottom in rectangles:
+                if right > left and bottom > top:
+                    state.rendered.append(
+                        canvas.create_rectangle(
+                            left,
+                            top,
+                            right,
+                            bottom,
+                            **mask_options,  # type: ignore
+                        )
+                    )
+
+        def draw_item_label(item: OverlayItem, box: OverlaySelection) -> None:
+            label = _item_label(item)
+            if not label:
+                return
+
+            x = box.left + item.center[0] * box.width
+            y = box.top + item.center[1] * box.height
+            # A one-pixel shadow improves legibility without covering the item.
+            state.rendered.append(
+                canvas.create_text(
+                    x + 1,
+                    y + 1,
+                    anchor=tk.CENTER,
+                    text=label,
+                    fill="#000000",
+                    font=("Segoe UI", 9, "bold"),
+                )
+            )
+            state.rendered.append(
+                canvas.create_text(
+                    x,
+                    y,
+                    anchor=tk.CENTER,
+                    text=label,
+                    fill="#ffffff",
+                    font=("Segoe UI", 9, "bold"),
+                )
+            )
+
+        def render_instructions():
+            state.rendered.extend(
+                [
+                    canvas.create_rectangle(
+                        instruction_margin,
+                        instruction_top,
+                        screen_width - instruction_margin,
+                        instruction_top + instruction_height,
+                        fill="#11181a",
+                        width=2,
+                    ),
+                    canvas.create_text(
+                        instruction_margin + 14,
+                        instruction_top + instruction_height // 2,
+                        anchor=tk.W,
+                        text=self.definition.instructions,
+                        fill="#f7fffb",
+                        font=("Segoe UI", 13, "bold"),
+                    ),
+                ]
+            )
+
         def render(box: OverlaySelection) -> None:
             clear()
+            draw_outside_mask(box)
+
+            # The selection itself has no background fill. The original
+            # screenshot therefore remains fully visible inside the selection.
             state.rendered.append(
                 canvas.create_rectangle(
                     box.left,
                     box.top,
                     box.right,
                     box.bottom,
-                    fill="#0b1718",
-                    stipple="gray50",
-                    outline="#55ff88",
+                    fill="",
+                    outline=self.SELECTION_OUTLINE,
                     width=3,
                 )
             )
+
             for item in self.definition.items:
                 style = item.style
-                state.rendered.extend(
-                    [
-                        canvas.create_rectangle(
-                            *item_bounds(item, box),
-                            fill=style.fill,
-                            outline=style.outline,
-                            width=style.stroke,
-                            stipple=style.stipple,
-                        ),
-                        canvas.create_text(
-                            box.left + item.center[0] * box.width,
-                            box.top + item.center[1] * box.height,
-                            anchor=tk.CENTER,
-                            text=_item_label(item),
-                            fill="white",
-                            font=("Segoe UI", 9),
-                        ),
-                    ]
+                state.rendered.append(
+                    canvas.create_rectangle(
+                        *item_bounds(item, box),
+                        fill=style.fill,
+                        outline=style.outline,
+                        width=style.stroke,
+                        stipple=style.stipple,
+                    )
                 )
+                draw_item_label(item, box)
 
             for handle_x, handle_y in handles(box).values():
                 radius = self.HANDLE_RADIUS
@@ -352,14 +424,14 @@ class TabOverlaySelector:
                         handle_y - radius,
                         handle_x + radius,
                         handle_y + radius,
-                        fill="#f0f5f3",
+                        fill="#f7fffb",
                         outline="#102414",
+                        width=2,
                     )
                 )
+            render_instructions()
 
         def clamp(box: OverlaySelection) -> OverlaySelection:
-            screen_width = screenshot.shape[1]
-            screen_height = screenshot.shape[0]
             width = min(
                 screen_width,
                 max(self.MINIMUM_SIZE, box.width),
@@ -448,15 +520,11 @@ class TabOverlaySelector:
             state.initial = None
             update_cursor(event)
 
-        def confirm(
-            _event: tk.Event | None = None,
-        ) -> None:
+        def confirm(_event: tk.Event | None = None) -> None:
             if state.selection is not None:
                 window.quit()
 
-        def cancel(
-            _event: tk.Event | None = None,
-        ) -> None:
+        def cancel(_event: tk.Event | None = None) -> None:
             state.selection = None
             window.quit()
 
@@ -469,6 +537,7 @@ class TabOverlaySelector:
         window.bind("<Escape>", cancel)
         window.bind("<Control-c>", cancel)
 
+        render(OverlaySelection(0, 0, 0, 0))
         window.mainloop()
         selection = state.selection
         window.destroy()
