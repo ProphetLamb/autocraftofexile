@@ -144,10 +144,10 @@ class TabOverlaySelector:
     HANDLE_HIT_PADDING = 3
     MINIMUM_SIZE = 48
 
-    # Tk stipple patterns simulate alpha on canvas primitives. gray75 means
-    # roughly 75 percent of the dark fill is drawn outside the selection.
+    # Tk stipple patterns simulate alpha on canvas primitives. gray25 means
+    # roughly 50 percent of the dark fill is drawn outside the selection.
     OUTSIDE_MASK_FILL = "#050708"
-    OUTSIDE_MASK_STIPPLE = "gray75"
+    OUTSIDE_MASK_STIPPLE = "gray25"
     SELECTION_OUTLINE = "#62f59a"
 
     HANDLE_CURSORS: ClassVar[Mapping[str, str]] = {
@@ -175,20 +175,68 @@ class TabOverlaySelector:
         selection = self.select(screenshot)
         return None if selection is None else self.definition.map_selection(selection)
 
-    @staticmethod
-    def _background_photo(tk: Any, screenshot: np.ndarray) -> Any:
-        success, encoded = cv2.imencode(".png", screenshot)
-        if not success:
-            raise ValueError("Unable to encode screenshot")
-        return tk.PhotoImage(data=base64.b64encode(encoded).decode("ascii"))
-
-    def select(
+    def detect_tab_header(
         self,
         screenshot: np.ndarray,
-    ) -> OverlaySelection | None:
-        _logger.debug("begin selecting")
+        name: str | tuple[str, ...],
+    ) -> Coordinates | None:
+        """Ask the user to click the tab header and return that position.
+
+        The screenshot is darkened globally and a high-contrast instruction
+        panel is shown. A single left click confirms the coordinate. Escape or
+        Ctrl+C cancels the operation.
+        """
         import tkinter as tk
 
+        window, canvas, _background = self._create_window(
+            tk,
+            screenshot,
+            cursor="crosshair",
+        )
+        display_name = self._display_name(name)
+        self._draw_fullscreen_mask(canvas, screenshot.shape[:2])
+        self._draw_instruction_panel(
+            tk,
+            canvas,
+            screenshot.shape[1],
+            f"Select the {display_name} tab header. Click to confirm. "
+            "Press Escape to cancel.",
+        )
+
+        selected: Coordinates | None = None
+
+        def confirm(event: tk.Event) -> None:
+            nonlocal selected
+            selected = Coordinates(x=int(event.x), y=int(event.y))
+            window.quit()
+
+        def cancel(_event: tk.Event | None = None) -> None:
+            nonlocal selected
+            selected = None
+            window.quit()
+
+        canvas.bind("<ButtonPress-1>", confirm)
+        window.bind("<Escape>", cancel)
+        window.bind("<Control-c>", cancel)
+        window.mainloop()
+        window.destroy()
+        return selected
+
+    @staticmethod
+    def _display_name(name: str | tuple[str, ...]) -> str:
+        parts = (name,) if isinstance(name, str) else name
+        return " / ".join(
+            part.replace("_", " ").strip().title() for part in parts if part.strip()
+        )
+
+    def _create_window(
+        self,
+        tk: Any,
+        screenshot: np.ndarray,
+        *,
+        cursor: str,
+    ) -> tuple[Any, Any, Any]:
+        """Create the shared fullscreen screenshot window and canvas."""
         if screenshot.ndim != 3 or screenshot.shape[2] != 3:
             raise ValueError("Expected a BGR screenshot")
 
@@ -203,7 +251,7 @@ class TabOverlaySelector:
             window,
             width=screen_width,
             height=screen_height,
-            cursor="crosshair",
+            cursor=cursor,
             highlightthickness=0,
         )
         canvas.pack(fill=tk.BOTH, expand=True)
@@ -213,12 +261,83 @@ class TabOverlaySelector:
             anchor=tk.NW,
             image=background,
         )
+        return window, canvas, background
 
-        # Persistent, high-contrast instruction panel. A shadow and solid dark
-        # backing keep the text readable over both bright and dark screenshots.
-        instruction_margin = 12
-        instruction_top = 12
-        instruction_height = 48
+    def _draw_fullscreen_mask(
+        self,
+        canvas: Any,
+        image_shape: tuple[int, int],
+    ) -> int:
+        """Darken the complete screenshot for point-selection steps."""
+        height, width = image_shape
+        return canvas.create_rectangle(
+            0,
+            0,
+            width,
+            height,
+            fill=self.OUTSIDE_MASK_FILL,
+            stipple=self.OUTSIDE_MASK_STIPPLE,
+            outline="",
+        )
+
+    @staticmethod
+    def _draw_instruction_panel(
+        tk: Any,
+        canvas: Any,
+        screen_width: int,
+        text: str,
+    ) -> tuple[int, int, int]:
+        """Draw the shared high-contrast instruction banner."""
+        margin = 12
+        top = 12
+        height = 48
+        shadow = canvas.create_rectangle(
+            margin + 2,
+            top + 2,
+            screen_width - margin + 2,
+            top + height + 2,
+            fill="#000000",
+            outline="",
+        )
+        panel = canvas.create_rectangle(
+            margin,
+            top,
+            screen_width - margin,
+            top + height,
+            fill="#11181a",
+            outline="#76f5aa",
+            width=2,
+        )
+        label = canvas.create_text(
+            margin + 14,
+            top + height // 2,
+            anchor=tk.W,
+            text=text,
+            fill="#f7fffb",
+            font=("Segoe UI", 13, "bold"),
+        )
+        return shadow, panel, label
+
+    @staticmethod
+    def _background_photo(tk: Any, screenshot: np.ndarray) -> Any:
+        success, encoded = cv2.imencode(".png", screenshot)
+        if not success:
+            raise ValueError("Unable to encode screenshot")
+        return tk.PhotoImage(data=base64.b64encode(encoded).decode("ascii"))
+
+    def select(
+        self,
+        screenshot: np.ndarray,
+    ) -> OverlaySelection | None:
+        _logger.debug("begin selecting")
+        import tkinter as tk
+
+        screen_height, screen_width = screenshot.shape[:2]
+        window, canvas, _background = self._create_window(
+            tk,
+            screenshot,
+            cursor="crosshair",
+        )
 
         state = _State()
 
@@ -370,25 +489,11 @@ class TabOverlaySelector:
             )
 
         def render_instructions():
-            state.rendered.extend(
-                [
-                    canvas.create_rectangle(
-                        instruction_margin,
-                        instruction_top,
-                        screen_width - instruction_margin,
-                        instruction_top + instruction_height,
-                        fill="#11181a",
-                        width=2,
-                    ),
-                    canvas.create_text(
-                        instruction_margin + 14,
-                        instruction_top + instruction_height // 2,
-                        anchor=tk.W,
-                        text=self.definition.instructions,
-                        fill="#f7fffb",
-                        font=("Segoe UI", 13, "bold"),
-                    ),
-                ]
+            self._draw_instruction_panel(
+                tk,
+                canvas,
+                screenshot.shape[1],
+                self.definition.instructions,
             )
 
         def render(box: OverlaySelection) -> None:

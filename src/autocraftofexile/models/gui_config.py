@@ -86,14 +86,23 @@ class GuiConfig:
             self.stop_hotkey = prompt_hotkey("stop")
             changed = True
         for tab in self.tabs.values():
+            if not tab.tab_header:
+                print(
+                    f"Invalid [cyan]{tab.name()!r}[/cyan] tab configuration\n"
+                    "Missing tab header"
+                )
             missing_items = tab.missing_items
             if missing_items:
                 print(
                     f"Invalid [cyan]{tab.name()!r}[/cyan] tab configuration\n"
                     f"Missing items: {', '.join(f'[bright_white]{x}[/bright_white]' for x in missing_items)}"
                 )
+            if not tab.tab_header or missing_items:
+                tab.detect(
+                    preserve_items=not missing_items,
+                    preserve_tab_header=bool(tab.tab_header),
+                )
                 changed = True
-                tab.detect()
         if not WellknownTabs.currency_general in self.tabs:
             tab = CurrencyGeneralTab()
             tab.detect()
