@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -27,9 +28,13 @@ class CurrencyGeneralTab(GuiTab):
         )
 
     @property
-    def is_valid(self) -> bool:
+    def missing_items(self) -> Iterable[str]:
         required = self.selector().definition.items
-        return all(name in self.items for name in required)
+        return [
+            item.name
+            for item in required
+            if item.name and not (item.name in self.items)
+        ]
 
     @property
     def scroll_of_wisdom(self):

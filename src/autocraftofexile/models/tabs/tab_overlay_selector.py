@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from importlib import resources
@@ -11,6 +12,8 @@ import cv2
 import numpy as np
 
 from ..coordinates import Coordinates
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True, frozen=True)
@@ -41,12 +44,12 @@ class OverlayStyle:
         cls,
         data: Mapping[str, Any] | None,
     ) -> Self:
-        values = data or {}
+        data = data or {}
         return cls(
-            fill=values.get("fill") or "#101619",
-            outline=values.get("outline") or "#74d4dc",
-            stroke=values.get("stroke") or 1,
-            stipple=values.get("stipple") or "gray50",
+            fill=data.get("fill") or "#101619",
+            outline=data.get("outline") or "#74d4dc",
+            stroke=data.get("stroke") or 1,
+            stipple=data.get("stipple") or "gray50",
         )
 
 
@@ -93,17 +96,19 @@ class TabOverlayDefinition:
             raise ValueError("Overlay item names must be unique")
         return cls(
             template_size=(int(template[0]), int(template[1])),
-            title=str(data.get("title", "Select stash tab")),
-            instructions=str(
-                data.get("instructions", "Align the mask and press Enter.")
-            ),
+            title=data.get("title") or "Select stash tab",
+            instructions=data.get("instructions")
+            or "Align the mask and press ENTER to confirm.",
             items=items,
         )
 
     @classmethod
     def from_resource(cls, package: str, name: str) -> Self:
+        _logger.debug("begin loading from resource package=%s, name=%s", package, name)
         resource = resources.files(package).joinpath(name)
-        return cls.from_dict(json.loads(resource.read_text(encoding="utf-8")))
+        result = cls.from_dict(json.loads(resource.read_text(encoding="utf-8")))
+        _logger.debug("done loading from resource")
+        return result
 
     @property
     def entry_names(self) -> tuple[str, ...]:
@@ -181,6 +186,7 @@ class TabOverlaySelector:
         self,
         screenshot: np.ndarray,
     ) -> OverlaySelection | None:
+        _logger.debug("begin selecting")
         import tkinter as tk
 
         if screenshot.ndim != 3 or screenshot.shape[2] != 3:
@@ -541,6 +547,7 @@ class TabOverlaySelector:
         window.mainloop()
         selection = state.selection
         window.destroy()
+        _logger.debug("done selecting selection=%s", repr(selection))
         return selection
 
 

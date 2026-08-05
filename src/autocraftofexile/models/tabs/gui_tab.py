@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass, field
 from typing import Any, Self
 
@@ -27,8 +27,8 @@ class GuiTab(ABC):
 
     @property
     @abstractmethod
-    def is_valid(self) -> bool:
-        """The loaded or detected configuration contains all required currencies"""
+    def missing_items(self) -> Iterable[str]:
+        """The loaded or detected configuration lacks these required items"""
 
     @classmethod
     @abstractmethod
@@ -38,8 +38,7 @@ class GuiTab(ABC):
     def detect(self) -> None:
         """Interactively detect and store currency coordinates."""
         Prompt.ask(
-            f"[bright_white]Open the {self.name()} stash tab.[/bright_white] "
-            "Press ENTER when ready"
+            f"Open the [cyan]{self.name()}[/cyan] stash tab. Press ENTER when ready"
         )
 
         # Imported lazily so importing the package does not require a graphical
