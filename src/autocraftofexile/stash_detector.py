@@ -6,11 +6,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-
-@dataclass(slots=True, frozen=True)
-class Coordinates:
-    x: int
-    y: int
+from .models.coordinates import Coordinates
 
 
 @dataclass(slots=True, frozen=True)

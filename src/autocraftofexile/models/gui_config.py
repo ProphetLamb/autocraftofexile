@@ -1,54 +1,95 @@
+from __future__ import annotations
+
+import logging
+import time
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Self
 
+import keyboard
+import pyautogui
+from rich import print
 
-@dataclass(slots=True)
-class Coordinates:
-    x: int
-    y: int
+from .coordinates import Coordinates
+from .tabs.currency_general_tab import CurrencyGeneralTab
+from .tabs.gui_tab import GuiTab
 
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any] | None) -> Self | None:
-        if not data or not "x" in data or not "y" in data:
-            return None
-        return cls(x=data["x"], y=data["y"])
+_logger = logging.getLogger(__name__)
+
+
+def prompt_coordinates(name: str) -> Coordinates:
+    time.sleep(0.1)
+    input(f"Move mouse to the {name} and press ENTER")
+    x, y = pyautogui.position()
+    print(f"[bright_white]{name}[/bright_white]: {x}, {y}")
+    return Coordinates(x, y)
+
+
+def prompt_hotkey(name: str) -> str:
+    time.sleep(0.1)
+    print(f"\nPress the [bright_white]{name}[/bright_white] hotkey.")
+    hotkey = keyboard.read_hotkey(suppress=False)
+    print(f"[bright_white]{name}[/bright_white] hotkey: [cyan]{hotkey}[/cyan]")
+    return hotkey
+
+
+class WellknownTabs:
+    currency_general = ("currency", "general")
+    currency_exotic = ("currency", "exotic")
+
+    tab_types: Mapping[tuple[str, ...], type[GuiTab]] = {
+        currency_general: CurrencyGeneralTab
+    }
 
 
 @dataclass(slots=True)
 class GuiConfig:
-    showcase: Coordinates
-
-    transmute: Coordinates
-    augment: Coordinates
-    alteration: Coordinates
-    regal: Coordinates
-    alchemy: Coordinates
-    chaos: Coordinates
-    exalt: Coordinates
-    scour: Coordinates
-    annul: Coordinates
-    jeweller: Coordinates
-    fusing: Coordinates
-
     start_hotkey: str
     stop_hotkey: str
+    tabs: dict[tuple[str, ...], GuiTab] = field(
+        default_factory=dict[tuple[str, ...], GuiTab]
+    )
+
+    def add_tab(self, tab: GuiTab) -> None:
+        if tab.name in self.tabs:
+            raise ValueError(f"GUI tab {tab.name!r} is already configured")
+        self.tabs[tab.name()] = tab
+
+    @property
+    def currency_general(self) -> CurrencyGeneralTab:
+        return self.tabs[WellknownTabs.currency_general]  # pyright: ignore[reportReturnType]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "start_hotkey": self.start_hotkey,
+            "stop_hotkey": self.stop_hotkey,
+            "tabs": [tab.to_dict() for tab in self.tabs.values()],
+        }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        return cls(
-            showcase=Coordinates.from_dict(data.get("showcase")),  # type: ignore
-            transmute=Coordinates.from_dict(data.get("transmute")),  # type: ignore
-            augment=Coordinates.from_dict(data.get("augment")),  # type: ignore
-            alteration=Coordinates.from_dict(data.get("alteration")),  # type: ignore
-            regal=Coordinates.from_dict(data.get("regal")),  # type: ignore
-            alchemy=Coordinates.from_dict(data.get("alchemy")),  # type: ignore
-            chaos=Coordinates.from_dict(data.get("chaos")),  # type: ignore
-            exalt=Coordinates.from_dict(data.get("exalt")),  # type: ignore
-            scour=Coordinates.from_dict(data.get("scour")),  # type: ignore
-            annul=Coordinates.from_dict(data.get("annul")),  # type: ignore
-            jeweller=Coordinates.from_dict(data.get("jeweller")),  # type: ignore
-            fusing=Coordinates.from_dict(data.get("fusing")),  # type: ignore
-            start_hotkey=data.get("start_hotkey"),  # type: ignore
-            stop_hotkey=data.get("stop_hotkey"),  # type: ignore
+        config = cls(
+            start_hotkey=data.get("start_hotkey"),  # pyright: ignore[reportArgumentType]
+            stop_hotkey=data.get("stop_hotkey"),  # pyright: ignore[reportArgumentType]
         )
+        for raw_tab in data.get("tabs") or list[Any]():
+            name = raw_tab.get("name")
+            tab_class = WellknownTabs.tab_types.get(name)
+            if tab_class:
+                config.add_tab(tab_class.from_dict(raw_tab))
+            else:
+                _logger.error("Unknown tab name %s", name)
+        return config
+
+    def prompt_missing_config(self):
+        if not self.start_hotkey:
+            self.start_hotkey = prompt_hotkey("start")
+        if not self.stop_hotkey:
+            self.stop_hotkey = prompt_hotkey("stop")
+        for tab in self.tabs.values():
+            if not tab.is_valid:
+                tab.detect()
+        if not WellknownTabs.currency_general in self.tabs:
+            tab = CurrencyGeneralTab()
+            tab.detect()
+            self.add_tab(tab)

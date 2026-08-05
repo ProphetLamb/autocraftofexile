@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass
 
 import pyperclip
 
@@ -12,24 +13,25 @@ from .crafting import (
     CrafterMethod,
     CraftingOptions,
     CraftStepResult,
+    StashLocation,
     find_crafter_method,
 )
 from .item_matcher import ItemMatcher, ItemMatchResult
 from .item_parser import parse_item
-from .models.gui_config import Coordinates
+from .models.gui_config import WellknownTabs
 from .models.item import Item
 from .rich_recipe import StepStatus
 
 _logger = logging.getLogger(__name__)
 
 
+@dataclass(slots=True)
 class ShowcaseCrafter(Crafter):
-    step_index: int = 0
+    step_index: int
     crafter_methods: tuple[CrafterMethod, ...]
     _current_item: Item | None
     _cached_text: str | None
     _cached_item: Item | None
-    _cached_coords: Coordinates | None
 
     def __init__(
         self,
@@ -39,20 +41,15 @@ class ShowcaseCrafter(Crafter):
         step_index: int = 0,
         crafter_methods: tuple[CrafterMethod, ...] | None = None,
     ):
-        self.options = options
+        super().__init__(options, stopping_token)
         self.step_index = step_index
-        self.dragged_currency = None
         self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
         self._current_item = None
         self._cached_text = None
         self._cached_item = None
-        self._cached_coords = None
-        self.stopping_token = stopping_token
-        self._stats = {}
-
-    @property
-    def crafting_target(self) -> Coordinates:
-        return self.options.config.showcase
+        self.poe.crafting_target_loc = StashLocation(
+            WellknownTabs.currency_general, options.config.currency_general.showcase
+        )
 
     def execute(self):
         _logger.debug("begin executing step %d", self.step_index)
@@ -91,16 +88,14 @@ class ShowcaseCrafter(Crafter):
 
     def _get_item(self) -> Item:
         _logger.debug("begin get item")
-        self.stopping_token.throw_if_cancelled()
+        self.poe.stopping_token.throw_if_cancelled()
         if self._current_item:
             _logger.debug("end get item using cached item")
             return self._current_item
 
-        showcase = self.options.config.showcase
-
-        self.move_to(showcase)
-        self.hotkey("ctrl", "alt", "c")
-        time.sleep(self._duration(1 / self.options.speed))
+        self.poe.move_to_crafting_target()
+        self.poe.hotkey("ctrl", "alt", "c")
+        time.sleep(self.poe.duration(1 / self.options.speed))
 
         text = pyperclip.paste()
 
@@ -129,7 +124,7 @@ class ShowcaseCrafter(Crafter):
         if not 0 <= self.step_index < len(self.options.recipe.config):
             raise IndexError(f"Recipe step index out of range: {self.step_index}")
         step = self.options.recipe.config[self.step_index]
-        self.stopping_token.throw_if_cancelled()
+        self.poe.stopping_token.throw_if_cancelled()
         self.options.rich_recipe.status[step] = StepStatus(
             active=True,
         )
@@ -141,7 +136,7 @@ class ShowcaseCrafter(Crafter):
                 f"{step.method!r}"
             )
 
-        item_changed = crafter_method.invoke(self)
+        item_changed = crafter_method.invoke(self.poe)
         self.options.rich_recipe.inc_stat(step.method)
 
         _logger.debug(
@@ -164,7 +159,7 @@ class ShowcaseCrafter(Crafter):
 
     def _evaluate_item(self, item: Item) -> CraftStepResult:
         _logger.debug("begin evaluating item %s", repr(item))
-        self.stopping_token.throw_if_cancelled()
+        self.poe.stopping_token.throw_if_cancelled()
 
         step = self._current_step
         if step.autopass:

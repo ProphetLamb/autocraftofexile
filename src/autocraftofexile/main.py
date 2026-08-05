@@ -15,7 +15,7 @@ from autocraftofexile import GUI_CONFIG_FILE, LOG_FILE, POECD_FILE, RECIPE_FILE
 from .cancellation_token import CancellationToken
 from .crafting import Crafter, CraftingOptions
 from .crafting_worker import CraftingWorker
-from .gui_config import load_gui_config
+from .gui_config_loader import load_gui_config
 from .poecd_loader import load_poecd_data
 from .recipe_loader import load_recipe
 from .rich_recipe import RichRecipe, repr_recipe

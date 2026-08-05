@@ -34,10 +34,6 @@ dev = ["pytest>=8.0"]
 autocraftofexile = "autocraftofexile.main:app"
 
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
