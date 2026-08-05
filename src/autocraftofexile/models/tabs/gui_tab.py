@@ -18,7 +18,7 @@ from .tab_overlay_selector import TabOverlaySelector
 class GuiTab(ABC):
     """One addressable Path of Exile stash-tab layout."""
 
-    entries: dict[str, Coordinates] = field(default_factory=dict[str, Coordinates])
+    items: dict[str, Coordinates] = field(default_factory=dict[str, Coordinates])
 
     @classmethod
     @abstractmethod
@@ -55,8 +55,8 @@ class GuiTab(ABC):
         detected = self.selector().detect(screenshot)
         if detected is None:
             raise ValueError("Selection aborted")
-        self.entries.clear()
-        self.entries.update(detected)
+        self.items.clear()
+        self.items.update(detected)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
@@ -64,10 +64,10 @@ class GuiTab(ABC):
         if name != cls.name():
             raise ValueError(f"Invalid tab name {name!r}, expected {cls.name()!r}")
         return cls(
-            entries={
+            items={
                 name: Coordinates(**coordinates_data)
                 for name, coordinates_data in (
-                    data.get("entries") or dict[str, Any]()
+                    data.get("items") or dict[str, Any]()
                 ).items()
             },
         )
@@ -75,5 +75,5 @@ class GuiTab(ABC):
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name(),
-            "entries": {name: dict(*coords) for name, coords in self.entries},
+            "items": {name: dict(*coords) for name, coords in self.items},
         }

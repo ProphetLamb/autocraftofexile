@@ -1,99 +1,377 @@
 {
-  "template_size": [643, 643],
+  "template_size": [
+    643,
+    643
+  ],
   "title": "Select the General currency tab",
   "instructions": "Align the generated mask with the General currency tab. Drag inside to move, drag a handle to resize, Enter confirms, Escape cancels.",
-  "entries": {
-    "scroll_of_wisdom": [49, 80],
-    "portal_scroll": [107, 80],
-    "blacksmiths_whetstone": [166, 80],
-    "armourers_scrap": [368, 80],
-    "glassblowers_bauble": [426, 80],
-    "gemcutters_prism": [484, 80],
-    "cartographers_chisel": [600, 80],
-    "orb_of_transmutation": [49, 145],
-    "orb_of_alteration": [107, 145],
-    "orb_of_annulment": [166, 145],
-    "orb_of_chance": [225, 145],
-    "exalted_orb": [284, 145],
-    "mirror_of_kalandra": [368, 145],
-    "regal_orb": [426, 145],
-    "orb_of_alchemy": [484, 145],
-    "chaos_orb": [542, 145],
-    "veiled_chaos_orb": [600, 145],
-    "orb_of_augmentation": [166, 202],
-    "divine_orb": [600, 202],
-    "jewellers_orb": [49, 270],
-    "orb_of_fusing": [107, 270],
-    "chromatic_orb": [166, 270],
-    "enkindling_orb": [49, 327],
-    "ancient_orb": [107, 327],
-    "orb_of_binding": [166, 327],
-    "orb_of_regret": [426, 327],
-    "orb_of_unmaking": [484, 327],
-    "instilling_orb": [49, 386],
-    "orb_of_scouring": [426, 386],
-    "sacred_orb": [484, 386],
-    "blessed_orb": [542, 386],
-    "vaal_orb": [600, 386],
-    "showcase": [320, 331]
-  },
-  "shapes": [
-    {"kind": "rectangle", "left": 0.0373, "top": 0.0855, "right": 0.1151, "bottom": 0.1633},
-    {"kind": "rectangle", "left": 0.1275, "top": 0.0855, "right": 0.2053, "bottom": 0.1633},
-    {"kind": "rectangle", "left": 0.2193, "top": 0.0855, "right": 0.2970, "bottom": 0.1633},
-    {"kind": "rectangle", "left": 0.5334, "top": 0.0855, "right": 0.6112, "bottom": 0.1633},
-    {"kind": "rectangle", "left": 0.6236, "top": 0.0855, "right": 0.7014, "bottom": 0.1633},
-    {"kind": "rectangle", "left": 0.7140, "top": 0.0855, "right": 0.7918, "bottom": 0.1633},
-    {"kind": "rectangle", "left": 0.8040, "top": 0.0855, "right": 0.8818, "bottom": 0.1633},
-    {"kind": "rectangle", "left": 0.8942, "top": 0.0855, "right": 0.9720, "bottom": 0.1633},
-
-    {"kind": "rectangle", "left": 0.0373, "top": 0.1866, "right": 0.1151, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.1275, "top": 0.1866, "right": 0.2053, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.2193, "top": 0.1866, "right": 0.2970, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.3110, "top": 0.1866, "right": 0.3888, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.4028, "top": 0.1866, "right": 0.4806, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.5334, "top": 0.1866, "right": 0.6112, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.6236, "top": 0.1866, "right": 0.7014, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.7140, "top": 0.1866, "right": 0.7918, "bottom": 0.2644},
-    {"kind": "rectangle", "left": 0.8040, "top": 0.1866, "right": 0.8818, "bottom": 0.2644},
-
-    {"kind": "rectangle", "left": 0.0373, "top": 0.2768, "right": 0.1151, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.1275, "top": 0.2768, "right": 0.2053, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.2193, "top": 0.2768, "right": 0.2970, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.3110, "top": 0.2768, "right": 0.3888, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.4028, "top": 0.2768, "right": 0.4806, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.5334, "top": 0.2768, "right": 0.6112, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.6236, "top": 0.2768, "right": 0.7014, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.7140, "top": 0.2768, "right": 0.7918, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.8040, "top": 0.2768, "right": 0.8818, "bottom": 0.3546},
-    {"kind": "rectangle", "left": 0.8942, "top": 0.2768, "right": 0.9720, "bottom": 0.3546},
-
-    {"kind": "rectangle", "left": 0.4261, "top": 0.3764, "right": 0.5677, "bottom": 0.6547, "fill": "#11131d", "outline": "#8ce9ef", "width": 2},
-
-    {"kind": "rectangle", "left": 0.1275, "top": 0.3810, "right": 0.2053, "bottom": 0.4588},
-    {"kind": "rectangle", "left": 0.2193, "top": 0.3810, "right": 0.2970, "bottom": 0.4588},
-    {"kind": "rectangle", "left": 0.3110, "top": 0.3810, "right": 0.3888, "bottom": 0.4588},
-    {"kind": "rectangle", "left": 0.6236, "top": 0.3810, "right": 0.7014, "bottom": 0.4588},
-    {"kind": "rectangle", "left": 0.7140, "top": 0.3810, "right": 0.7918, "bottom": 0.4588},
-    {"kind": "rectangle", "left": 0.8040, "top": 0.3810, "right": 0.8818, "bottom": 0.4588},
-    {"kind": "rectangle", "left": 0.8942, "top": 0.3810, "right": 0.9720, "bottom": 0.4588},
-
-    {"kind": "rectangle", "left": 0.0373, "top": 0.4712, "right": 0.1151, "bottom": 0.5490},
-    {"kind": "rectangle", "left": 0.1275, "top": 0.4712, "right": 0.2053, "bottom": 0.5490},
-    {"kind": "rectangle", "left": 0.2193, "top": 0.4712, "right": 0.2970, "bottom": 0.5490},
-    {"kind": "rectangle", "left": 0.3110, "top": 0.4712, "right": 0.3888, "bottom": 0.5490},
-    {"kind": "rectangle", "left": 0.6236, "top": 0.4712, "right": 0.7014, "bottom": 0.5490},
-    {"kind": "rectangle", "left": 0.7140, "top": 0.4712, "right": 0.7918, "bottom": 0.5490},
-    {"kind": "rectangle", "left": 0.8040, "top": 0.4712, "right": 0.8818, "bottom": 0.5490},
-    {"kind": "rectangle", "left": 0.8942, "top": 0.4712, "right": 0.9720, "bottom": 0.5490},
-
-    {"kind": "rectangle", "left": 0.0373, "top": 0.5614, "right": 0.1151, "bottom": 0.6392},
-    {"kind": "rectangle", "left": 0.1275, "top": 0.5614, "right": 0.2053, "bottom": 0.6392},
-    {"kind": "rectangle", "left": 0.2193, "top": 0.5614, "right": 0.2970, "bottom": 0.6392},
-    {"kind": "rectangle", "left": 0.3110, "top": 0.5614, "right": 0.3888, "bottom": 0.6392},
-    {"kind": "rectangle", "left": 0.6236, "top": 0.5614, "right": 0.7014, "bottom": 0.6392},
-    {"kind": "rectangle", "left": 0.7140, "top": 0.5614, "right": 0.7918, "bottom": 0.6392},
-    {"kind": "rectangle", "left": 0.8040, "top": 0.5614, "right": 0.8818, "bottom": 0.6392},
-    {"kind": "rectangle", "left": 0.8942, "top": 0.5614, "right": 0.9720, "bottom": 0.6392}
+  "items": [
+    {
+      "name": "",
+      "center": [
+        0.0762,
+        0.1244
+      ]
+    },
+    {
+      "name": "scroll_of_wisdom",
+      "label": "portal",
+      "center": [
+        0.1664,
+        0.1244
+      ]
+    },
+    {
+      "name": "portal_scroll",
+      "center": [
+        0.25815,
+        0.1244
+      ]
+    },
+    {
+      "name": "blacksmiths_whetstone",
+      "center": [
+        0.5723,
+        0.1244
+      ]
+    },
+    {
+      "name": "armourers_scrap",
+      "center": [
+        0.6625,
+        0.1244
+      ]
+    },
+    {
+      "name": "glassblowers_bauble",
+      "center": [
+        0.7529,
+        0.1244
+      ]
+    },
+    {
+      "name": "gemcutters_prism",
+      "center": [
+        0.8429,
+        0.1244
+      ]
+    },
+    {
+      "name": "cartographers_chisel",
+      "center": [
+        0.9331,
+        0.1244
+      ]
+    },
+    {
+      "name": "orb_of_transmutation",
+      "center": [
+        0.0762,
+        0.2255
+      ]
+    },
+    {
+      "name": "orb_of_alteration",
+      "center": [
+        0.1664,
+        0.2255
+      ]
+    },
+    {
+      "name": "orb_of_annulment",
+      "center": [
+        0.25815,
+        0.2255
+      ]
+    },
+    {
+      "name": "orb_of_chance",
+      "center": [
+        0.3499,
+        0.2255
+      ]
+    },
+    {
+      "name": "exalted_orb",
+      "center": [
+        0.4417,
+        0.2255
+      ]
+    },
+    {
+      "name": "mirror_of_kalandra",
+      "center": [
+        0.5723,
+        0.2255
+      ]
+    },
+    {
+      "name": "regal_orb",
+      "center": [
+        0.6625,
+        0.2255
+      ]
+    },
+    {
+      "name": "orb_of_alchemy",
+      "center": [
+        0.7529,
+        0.2255
+      ]
+    },
+    {
+      "name": "chaos_orb",
+      "center": [
+        0.8429,
+        0.2255
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.0762,
+        0.3157
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.1664,
+        0.3157
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.25815,
+        0.3157
+      ]
+    },
+    {
+      "name": "orb_of_augmentation",
+      "center": [
+        0.3499,
+        0.3157
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.4417,
+        0.3157
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.5723,
+        0.3157
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.6625,
+        0.3157
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.7529,
+        0.3157
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.8429,
+        0.3157
+      ]
+    },
+    {
+      "name": "divine_orb",
+      "center": [
+        0.9331,
+        0.3157
+      ]
+    },
+    {
+      "name": "showcase",
+      "center": [
+        0.4969,
+        0.51555
+      ],
+      "size": [
+        0.1416,
+        0.2783
+      ],
+      "style": {
+        "fill": "#11131d",
+        "outline": "#8ce9ef",
+        "stroke": 2
+      }
+    },
+    {
+      "name": "jewellers_orb",
+      "center": [
+        0.1664,
+        0.4199
+      ]
+    },
+    {
+      "name": "orb_of_fusing",
+      "center": [
+        0.25815,
+        0.4199
+      ]
+    },
+    {
+      "name": "chromatic_orb",
+      "center": [
+        0.3499,
+        0.4199
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.6625,
+        0.4199
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.7529,
+        0.4199
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.8429,
+        0.4199
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.9331,
+        0.4199
+      ]
+    },
+    {
+      "name": "enkindling_orb",
+      "center": [
+        0.0762,
+        0.5101
+      ]
+    },
+    {
+      "name": "ancient_orb",
+      "center": [
+        0.1664,
+        0.5101
+      ]
+    },
+    {
+      "name": "orb_of_binding",
+      "center": [
+        0.25815,
+        0.5101
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.3499,
+        0.5101
+      ]
+    },
+    {
+      "name": "orb_of_regret",
+      "center": [
+        0.6625,
+        0.5101
+      ]
+    },
+    {
+      "name": "orb_of_unmaking",
+      "center": [
+        0.7529,
+        0.5101
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.8429,
+        0.5101
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.9331,
+        0.5101
+      ]
+    },
+    {
+      "name": "instilling_orb",
+      "center": [
+        0.0762,
+        0.6003
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.1664,
+        0.6003
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.25815,
+        0.6003
+      ]
+    },
+    {
+      "name": "",
+      "center": [
+        0.3499,
+        0.6003
+      ]
+    },
+    {
+      "name": "orb_of_scouring",
+      "center": [
+        0.6625,
+        0.6003
+      ]
+    },
+    {
+      "name": "sacred_orb",
+      "center": [
+        0.7529,
+        0.6003
+      ]
+    },
+    {
+      "name": "blessed_orb",
+      "center": [
+        0.8429,
+        0.6003
+      ]
+    },
+    {
+      "name": "vaal_orb",
+      "center": [
+        0.9331,
+        0.6003
+      ]
+    }
   ]
 }

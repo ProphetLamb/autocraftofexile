@@ -3,9 +3,9 @@ from __future__ import annotations
 import base64
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import resources
-from typing import Any, Literal, Self
+from typing import Any, ClassVar, Self
 
 import cv2
 import numpy as np
@@ -30,88 +30,125 @@ class OverlaySelection:
 
 
 @dataclass(slots=True, frozen=True)
-class OverlayShape:
-    """One shape in normalized template coordinates."""
-
-    kind: Literal["rectangle", "ellipse"]
-    left: float
-    top: float
-    right: float
-    bottom: float
+class OverlayStyle:
     fill: str = "#101619"
     outline: str = "#74d4dc"
-    width: int = 1
+    stroke: int = 1
     stipple: str = "gray50"
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> Self:
+    def from_dict(
+        cls,
+        data: Mapping[str, Any] | None,
+    ) -> Self:
+        values = data or {}
         return cls(
-            kind=data["kind"],
-            left=float(data["left"]),
-            top=float(data["top"]),
-            right=float(data["right"]),
-            bottom=float(data["bottom"]),
-            fill=str(data.get("fill", "#101619")),
-            outline=str(data.get("outline", "#74d4dc")),
-            width=int(data.get("width", 1)),
-            stipple=str(data.get("stipple", "gray50")),
+            fill=values.get("fill") or "#101619",
+            outline=values.get("outline") or "#74d4dc",
+            stroke=values.get("stroke") or 1,
+            stipple=values.get("stipple") or "gray50",
+        )
+
+
+@dataclass(slots=True, frozen=True)
+class OverlayItem:
+    """One rendered shape and, unless a placeholder, one detected entry."""
+
+    name: str
+    center: tuple[float, float]
+    size: tuple[float, float]
+    style: OverlayStyle
+
+    @property
+    def is_placeholder(self) -> bool:
+        return self.name.startswith("placeholder")
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> Self:
+        center = data["center"]
+        size = data.get("size") or [0.0778, 0.0778]
+        return cls(
+            name=str(data["name"]),
+            center=(center[0], center[1]),
+            size=(size[0], size[1]),
+            style=OverlayStyle.from_dict(data.get("style")),
         )
 
 
 @dataclass(slots=True, frozen=True)
 class TabOverlayDefinition:
-    """Data-driven description of a selectable stash-tab overlay."""
-
-    template_width: int
-    template_height: int
-    entries: Mapping[str, tuple[float, float]]
-    shapes: tuple[OverlayShape, ...]
-    title: str = "Select stash tab"
-    instructions: str = (
-        "Drag to create the mask. Drag inside to move it. "
-        "Drag a handle to resize it. Enter confirms; Escape cancels."
-    )
+    template_size: tuple[int, int]
+    title: str
+    instructions: str
+    items: tuple[OverlayItem, ...]
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        template_size = data["template_size"]
-        width, height = int(template_size[0]), int(template_size[1])
+        template = data["template_size"]
+        items = tuple(
+            OverlayItem.from_dict(item) for item in data["items"] if item["name"]
+        )
+        names = [item.name for item in items]
+        if len(names) != len(set(names)):
+            raise ValueError("Overlay item names must be unique")
         return cls(
-            template_width=width,
-            template_height=height,
-            entries={
-                str(name): (float(point[0]) / width, float(point[1]) / height)
-                for name, point in data["entries"].items()
-            },
-            shapes=tuple(OverlayShape.from_dict(shape) for shape in data["shapes"]),
+            template_size=(int(template[0]), int(template[1])),
             title=str(data.get("title", "Select stash tab")),
-            instructions=str(data.get("instructions", cls.instructions)),
+            instructions=str(
+                data.get("instructions", "Align the mask and press Enter.")
+            ),
+            items=items,
         )
 
     @classmethod
     def from_resource(cls, package: str, name: str) -> Self:
-        """Load a definition from a resource bundled inside the Python module."""
         resource = resources.files(package).joinpath(name)
         return cls.from_dict(json.loads(resource.read_text(encoding="utf-8")))
+
+    @property
+    def entry_names(self) -> tuple[str, ...]:
+        return tuple(item.name for item in self.items if not item.is_placeholder)
 
     def map_selection(
         self,
         selection: OverlaySelection,
     ) -> dict[str, Coordinates]:
         return {
-            name: Coordinates(
-                x=selection.left + round(x * selection.width),
-                y=selection.top + round(y * selection.height),
+            item.name: Coordinates(
+                x=selection.left + round(item.center[0] * selection.width),
+                y=selection.top + round(item.center[1] * selection.height),
             )
-            for name, (x, y) in self.entries.items()
+            for item in self.items
+            if not item.is_placeholder
         }
 
 
+@dataclass(slots=True)
+class _State:
+    selection: OverlaySelection | None = None
+    mode: tuple[str, str | None] | None = None
+    origin: tuple[int, int] | None = None
+    initial: OverlaySelection | None = None
+    rendered: list[int] = field(default_factory=list[int])
+
+
 class TabOverlaySelector:
-    """Reusable data-driven, movable, resizable alignment mask."""
+    """Data-driven movable and resizable stash-tab alignment mask."""
 
     HANDLE_RADIUS = 7
+    HANDLE_HIT_PADDING = 3
     MINIMUM_SIZE = 48
+
+    HANDLE_CURSORS: ClassVar[Mapping[str, str]] = {
+        "nw": "top_left_corner",
+        "n": "top_side",
+        "ne": "top_right_corner",
+        "e": "right_side",
+        "se": "bottom_right_corner",
+        "s": "bottom_side",
+        "sw": "bottom_left_corner",
+        "w": "left_side",
+    }
 
     def __init__(self, definition: TabOverlayDefinition) -> None:
         self.definition = definition
@@ -125,19 +162,19 @@ class TabOverlaySelector:
         screenshot: np.ndarray,
     ) -> dict[str, Coordinates] | None:
         selection = self.select(screenshot)
-        if selection is None:
-            return None
-        return self.definition.map_selection(selection)
+        return None if selection is None else self.definition.map_selection(selection)
 
     @staticmethod
     def _background_photo(tk: Any, screenshot: np.ndarray) -> Any:
-        """Create a Tk image without requiring Pillow as a direct dependency."""
         success, encoded = cv2.imencode(".png", screenshot)
         if not success:
-            raise ValueError("Unable to encode screenshot for the overlay window")
+            raise ValueError("Unable to encode screenshot")
         return tk.PhotoImage(data=base64.b64encode(encoded).decode("ascii"))
 
-    def select(self, screenshot: np.ndarray) -> OverlaySelection | None:
+    def select(
+        self,
+        screenshot: np.ndarray,
+    ) -> OverlaySelection | None:
         import tkinter as tk
 
         if screenshot.ndim != 3 or screenshot.shape[2] != 3:
@@ -145,27 +182,21 @@ class TabOverlaySelector:
 
         window = tk.Tk()
         window.title(self.definition.title)
-        window.attributes("-fullscreen", True)  # pyright: ignore[reportUnknownMemberType]
-        window.attributes("-topmost", True)  # pyright: ignore[reportUnknownMemberType]
+        window.attributes("-fullscreen", True)  # type: ignore
+        window.attributes("-topmost", True)  # type: ignore
 
-        background_photo = self._background_photo(tk, screenshot)
+        background = self._background_photo(tk, screenshot)
         canvas = tk.Canvas(
             window,
-            width=screenshot.shape[1],
-            height=screenshot.shape[0],
             cursor="crosshair",
             highlightthickness=0,
         )
         canvas.pack(fill=tk.BOTH, expand=True)
-        canvas.create_image(0, 0, anchor=tk.NW, image=background_photo)  # pyright: ignore[reportUnknownMemberType]
-        canvas.create_rectangle(
-            8,
-            8,
-            screenshot.shape[1] - 8,
-            50,
-            fill="#101010",
-            stipple="gray50",
-            outline="",
+        canvas.create_image(  # type: ignore
+            0,
+            0,
+            anchor=tk.NW,
+            image=background,
         )
         canvas.create_text(
             18,
@@ -176,173 +207,212 @@ class TabOverlaySelector:
             font=("Segoe UI", 13, "bold"),
         )
 
-        state: dict[str, Any] = {
-            "selection": None,
-            "interaction": None,
-            "origin": None,
-            "initial": None,
-            "rendered": [],
-        }
+        state = _State()
 
-        def handle_points(
-            selection: OverlaySelection,
+        def handles(
+            box: OverlaySelection,
         ) -> dict[str, tuple[int, int]]:
-            center_x = (selection.left + selection.right) // 2
-            center_y = (selection.top + selection.bottom) // 2
+            center_x = (box.left + box.right) // 2
+            center_y = (box.top + box.bottom) // 2
             return {
-                "nw": (selection.left, selection.top),
-                "n": (center_x, selection.top),
-                "ne": (selection.right, selection.top),
-                "e": (selection.right, center_y),
-                "se": (selection.right, selection.bottom),
-                "s": (center_x, selection.bottom),
-                "sw": (selection.left, selection.bottom),
-                "w": (selection.left, center_y),
+                "nw": (box.left, box.top),
+                "n": (center_x, box.top),
+                "ne": (box.right, box.top),
+                "e": (box.right, center_y),
+                "se": (box.right, box.bottom),
+                "s": (center_x, box.bottom),
+                "sw": (box.left, box.bottom),
+                "w": (box.left, center_y),
             }
 
         def hit_handle(x: int, y: int) -> str | None:
-            selection = state["selection"]
-            if selection is None:
+            box = state.selection
+            if box is None:
                 return None
-            for name, (handle_x, handle_y) in handle_points(selection).items():
-                if (
-                    abs(x - handle_x) <= self.HANDLE_RADIUS + 3
-                    and abs(y - handle_y) <= self.HANDLE_RADIUS + 3
-                ):
+
+            hit_radius = self.HANDLE_RADIUS + self.HANDLE_HIT_PADDING
+            for name, (handle_x, handle_y) in handles(box).items():
+                if abs(x - handle_x) <= hit_radius and abs(y - handle_y) <= hit_radius:
                     return name
             return None
 
-        @staticmethod
-        def contains(selection: OverlaySelection, x: int, y: int) -> bool:
-            return (
-                selection.left <= x <= selection.right
-                and selection.top <= y <= selection.bottom
-            )
+        def selection_contains(
+            box: OverlaySelection,
+            x: int,
+            y: int,
+        ) -> bool:
+            return box.left <= x <= box.right and box.top <= y <= box.bottom
 
-        def clear_rendering() -> None:
-            for identifier in state["rendered"]:
+        def set_cursor(cursor: str) -> None:
+            if canvas.cget("cursor") == cursor:
+                return
+
+            try:
+                canvas.configure(cursor=cursor)
+            except tk.TclError:
+                # Cursor names vary slightly between Tk/platform versions.
+                # Falling back keeps selection usable on reduced cursor sets.
+                canvas.configure(cursor="crosshair")
+
+        def cursor_for_position(x: int, y: int) -> str:
+            box = state.selection
+            if box is None:
+                return "crosshair"
+
+            handle = hit_handle(x, y)
+            if handle is not None:
+                return self.HANDLE_CURSORS[handle]
+
+            if selection_contains(box, x, y):
+                return "fleur"
+
+            return "crosshair"
+
+        def cursor_for_mode(
+            mode: str,
+            handle: str | None,
+        ) -> str:
+            if mode == "move":
+                return "fleur"
+            if mode == "resize" and handle is not None:
+                return self.HANDLE_CURSORS[handle]
+            return "crosshair"
+
+        def update_cursor(event: tk.Event) -> None:
+            # Lock the operation cursor for the duration of a drag.
+            if state.mode is not None:
+                return
+            set_cursor(cursor_for_position(event.x, event.y))
+
+        def mouse_leave(_event: tk.Event) -> None:
+            if state.mode is None:
+                set_cursor("crosshair")
+
+        def clear() -> None:
+            for identifier in state.rendered:
                 canvas.delete(identifier)
-            state["rendered"] = []
+            state.rendered = []
 
-        def scale_shape(
-            shape: OverlayShape,
-            selection: OverlaySelection,
+        def item_bounds(
+            item: OverlayItem,
+            box: OverlaySelection,
         ) -> tuple[int, int, int, int]:
+            center_x = box.left + item.center[0] * box.width
+            center_y = box.top + item.center[1] * box.height
+            width = item.size[0] * box.width
+            height = item.size[1] * box.height
             return (
-                selection.left + round(shape.left * selection.width),
-                selection.top + round(shape.top * selection.height),
-                selection.left + round(shape.right * selection.width),
-                selection.top + round(shape.bottom * selection.height),
+                round(center_x - width / 2),
+                round(center_y - height / 2),
+                round(center_x + width / 2),
+                round(center_y + height / 2),
             )
 
-        def render(selection: OverlaySelection) -> None:
-            clear_rendering()
-
-            # One semi-transparent alignment mask generated entirely from the
-            # definition. There is no preview image or duplicated screenshot.
-            state["rendered"].append(
+        def render(box: OverlaySelection) -> None:
+            clear()
+            state.rendered.append(
                 canvas.create_rectangle(
-                    selection.left,
-                    selection.top,
-                    selection.right,
-                    selection.bottom,
+                    box.left,
+                    box.top,
+                    box.right,
+                    box.bottom,
                     fill="#0b1718",
                     stipple="gray50",
                     outline="#55ff88",
                     width=3,
                 )
             )
-            for shape in self.definition.shapes:
-                coordinates = scale_shape(shape, selection)
-                options: dict[str, Any] = {
-                    "fill": shape.fill,
-                    "outline": shape.outline,
-                    "width": shape.width,
-                    "stipple": shape.stipple,
-                }
-                if shape.kind == "rectangle":
-                    identifier = canvas.create_rectangle(*coordinates, **options)
-                else:
-                    identifier = canvas.create_oval(*coordinates, **options)
-                state["rendered"].append(identifier)
+            for item in self.definition.items:
+                style = item.style
+                state.rendered.extend(
+                    [
+                        canvas.create_rectangle(
+                            *item_bounds(item, box),
+                            fill=style.fill,
+                            outline=style.outline,
+                            width=style.stroke,
+                            stipple=style.stipple,
+                        ),
+                        canvas.create_text(
+                            box.left + item.center[0] * box.width,
+                            box.top + item.center[1] * box.height,
+                            anchor=tk.CENTER,
+                            text=_item_label(item),
+                            fill="white",
+                            font=("Segoe UI", 9),
+                        ),
+                    ]
+                )
 
-            for handle_x, handle_y in handle_points(selection).values():
+            for handle_x, handle_y in handles(box).values():
                 radius = self.HANDLE_RADIUS
-                state["rendered"].append(
-                    canvas.create_rectangle(
+                state.rendered.append(
+                    canvas.create_oval(
                         handle_x - radius,
                         handle_y - radius,
                         handle_x + radius,
                         handle_y + radius,
-                        fill="#55ff88",
+                        fill="#f0f5f3",
                         outline="#102414",
                     )
                 )
 
-        def clamp(selection: OverlaySelection) -> OverlaySelection:
+        def clamp(box: OverlaySelection) -> OverlaySelection:
             screen_width = screenshot.shape[1]
             screen_height = screenshot.shape[0]
-            width = min(screen_width, max(self.MINIMUM_SIZE, selection.width))
-            height = min(screen_height, max(self.MINIMUM_SIZE, selection.height))
-            left = min(max(0, selection.left), screen_width - width)
-            top = min(max(0, selection.top), screen_height - height)
-            return OverlaySelection(left, top, left + width, top + height)
-
-        def resized_selection(
-            initial: OverlaySelection,
-            handle: str,
-            x: int,
-            y: int,
-        ) -> OverlaySelection:
-            left, top, right, bottom = (
-                initial.left,
-                initial.top,
-                initial.right,
-                initial.bottom,
+            width = min(
+                screen_width,
+                max(self.MINIMUM_SIZE, box.width),
             )
-            if "w" in handle:
-                left = min(x, right - self.MINIMUM_SIZE)
-            if "e" in handle:
-                right = max(x, left + self.MINIMUM_SIZE)
-            if "n" in handle:
-                top = min(y, bottom - self.MINIMUM_SIZE)
-            if "s" in handle:
-                bottom = max(y, top + self.MINIMUM_SIZE)
-            return clamp(OverlaySelection(left, top, right, bottom))
+            height = min(
+                screen_height,
+                max(self.MINIMUM_SIZE, box.height),
+            )
+            left = min(max(0, box.left), screen_width - width)
+            top = min(max(0, box.top), screen_height - height)
+            return OverlaySelection(
+                left,
+                top,
+                left + width,
+                top + height,
+            )
 
         def mouse_down(event: tk.Event) -> None:
-            selection = state["selection"]
+            box = state.selection
             handle = hit_handle(event.x, event.y)
-            state["origin"] = (event.x, event.y)
-            state["initial"] = selection
+            state.origin = (event.x, event.y)
+            state.initial = box
+
             if handle is not None:
-                state["interaction"] = ("resize", handle)
-            elif selection is not None and contains(selection, event.x, event.y):
-                state["interaction"] = ("move", None)
+                state.mode = ("resize", handle)
+            elif box is not None and selection_contains(box, event.x, event.y):
+                state.mode = ("move", None)
             else:
-                state["interaction"] = ("create", None)
-                state["selection"] = None
-                clear_rendering()
+                state.mode = ("create", None)
+                state.selection = None
+                clear()
+
+            mode, active_handle = state.mode
+            set_cursor(cursor_for_mode(mode, active_handle))
 
         def mouse_move(event: tk.Event) -> None:
-            interaction = state["interaction"]
-            origin = state["origin"]
-            if interaction is None or origin is None:
+            if state.mode is None or state.origin is None:
                 return
-            mode, handle = interaction
-            origin_x, origin_y = origin
-            initial = state["initial"]
+
+            mode, handle = state.mode
+            origin_x, origin_y = state.origin
+            initial = state.initial
 
             if mode == "create":
                 left, right = sorted((origin_x, event.x))
                 top, bottom = sorted((origin_y, event.y))
                 if right - left < self.MINIMUM_SIZE or bottom - top < self.MINIMUM_SIZE:
                     return
-                selection = OverlaySelection(left, top, right, bottom)
+                box = OverlaySelection(left, top, right, bottom)
             elif mode == "move" and initial is not None:
                 delta_x = event.x - origin_x
                 delta_y = event.y - origin_y
-                selection = clamp(
+                box = clamp(
                     OverlaySelection(
                         initial.left + delta_x,
                         initial.top + delta_y,
@@ -351,32 +421,67 @@ class TabOverlaySelector:
                     )
                 )
             elif mode == "resize" and initial is not None and handle is not None:
-                selection = resized_selection(initial, handle, event.x, event.y)
+                left = initial.left
+                top = initial.top
+                right = initial.right
+                bottom = initial.bottom
+
+                if "w" in handle:
+                    left = min(event.x, right - self.MINIMUM_SIZE)
+                if "e" in handle:
+                    right = max(event.x, left + self.MINIMUM_SIZE)
+                if "n" in handle:
+                    top = min(event.y, bottom - self.MINIMUM_SIZE)
+                if "s" in handle:
+                    bottom = max(event.y, top + self.MINIMUM_SIZE)
+
+                box = clamp(OverlaySelection(left, top, right, bottom))
             else:
                 return
 
-            state["selection"] = selection
-            render(selection)
+            state.selection = box
+            render(box)
 
-        def mouse_up(_event: tk.Event) -> None:
-            state["interaction"] = None
-            state["origin"] = None
-            state["initial"] = None
+        def mouse_up(event: tk.Event) -> None:
+            state.mode = None
+            state.origin = None
+            state.initial = None
+            update_cursor(event)
 
-        def confirm(_event: tk.Event | None = None) -> None:
-            if state["selection"] is not None:
+        def confirm(
+            _event: tk.Event | None = None,
+        ) -> None:
+            if state.selection is not None:
                 window.quit()
 
-        def cancel(_event: tk.Event | None = None) -> None:
-            state["selection"] = None
+        def cancel(
+            _event: tk.Event | None = None,
+        ) -> None:
+            state.selection = None
             window.quit()
 
+        canvas.bind("<Motion>", update_cursor)
+        canvas.bind("<Leave>", mouse_leave)
         canvas.bind("<ButtonPress-1>", mouse_down)
         canvas.bind("<B1-Motion>", mouse_move)
         canvas.bind("<ButtonRelease-1>", mouse_up)
         window.bind("<Return>", confirm)
         window.bind("<Escape>", cancel)
+        window.bind("<Control-c>", cancel)
+
         window.mainloop()
-        selection = state["selection"]
+        selection = state.selection
         window.destroy()
         return selection
+
+
+def _item_label(item: OverlayItem) -> str:
+    orb = item.name.removeprefix("orb_of_")
+    if orb != item.name:
+        return orb[:3]
+
+    orb = item.name.removesuffix("_orb")
+    if orb != item.name:
+        return orb[:3]
+
+    return "".join(part[0] for part in item.name.split("_"))
