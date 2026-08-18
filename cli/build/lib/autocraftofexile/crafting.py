@@ -1,0 +1,446 @@
+from __future__ import annotations
+
+import pywinctl as pwc
+import logging
+import random
+import threading
+import time
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from types import MappingProxyType
+from typing import Iterable, Mapping
+
+import keyboard
+import pyautogui
+import pyperclip
+import pytweening
+
+from .item_matcher import ItemMatcher, ItemMatchResult
+from .item_parser import parse_item
+from .models.gui_config import Coordinates, GuiConfig
+from .models.item import Item
+from .models.poecd import PoeCd
+from .models.recipe import Recipe, RecipeCondition
+
+
+@dataclass
+class CraftingOptions:
+    speed: int
+
+
+class CraftingWorker:
+    thread: threading.Thread | None
+    config: GuiConfig
+    recipe: Recipe
+    poecd: PoeCd
+    options: CraftingOptions
+    is_running: bool
+
+    def __init__(
+        self,
+        config: GuiConfig,
+        recipe: Recipe,
+        poecd: PoeCd,
+        options: CraftingOptions
+    ) -> None:
+        self._stop_event = threading.Event()
+        self._shutdown_event = threading.Event()
+        self._thread_lock = threading.Lock()
+        self.thread = None
+        self.config = config
+        self.recipe = recipe
+        self.poecd = poecd
+        self.options = options
+        self.is_running = False
+
+    def run(self) -> None:
+        start_hotkey = keyboard.add_hotkey(
+            self.config.start_hotkey,
+            self.start,
+        )
+        stop_hotkey = keyboard.add_hotkey(
+            self.config.stop_hotkey,
+            self.stop,
+        )
+
+        try:
+            # Keep the process alive and listen for hotkeys.
+            # The crafting thread is not started until _start() is called.
+            self._shutdown_event.wait()
+        finally:
+            keyboard.remove_hotkey(start_hotkey)
+            keyboard.remove_hotkey(stop_hotkey)
+
+            self.stop()
+
+            with self._thread_lock:
+                thread = self.thread
+                try:
+                    if thread is not None and thread.is_alive():
+                        thread.join()
+                finally:
+                    self._shutdown_event.clear()
+
+    def start(self) -> None:
+        with self._thread_lock:
+            if self.thread is not None and self.thread.is_alive():
+                return
+
+            self._stop_event.clear()
+
+            self.thread = threading.Thread(
+                target=self._main,
+                name="crafting-worker",
+                daemon=True,
+            )
+            self.thread.start()
+            self.is_running = True
+
+    def stop(self) -> None:
+        with self._thread_lock:
+            thread = self.thread
+
+            if thread is not None and thread.is_alive():
+                self._stop_event.set()
+            self.is_running = False
+
+    def _main(self) -> None:
+        current_thread = threading.current_thread()
+
+        try:
+            crafter = Crafter(
+                self.config,
+                self.recipe,
+                self.poecd,
+                self.options
+            )
+
+            while not self._stop_event.is_set():
+                result = crafter.execute()
+
+                if result.done:
+                    return
+
+        except Exception:
+            message = "Crafter terminated unexpectedly"
+            logging.exception(message)
+            print(message)
+
+        finally:
+            with self._thread_lock:
+                # Avoid an old worker clearing a newer thread reference.
+                if self.thread is current_thread:
+                    self.thread = None
+
+                self._stop_event.clear()
+                self._shutdown_event.set()
+
+
+@dataclass(slots=True, frozen=True)
+class CraftStepResult:
+    match: ItemMatchResult
+    done: bool
+
+
+@dataclass(slots=True, frozen=True)
+class CurrencyMethodDefinition:
+    method: tuple[str, ...]
+    coord_field: str
+
+
+CURRENCY_METHODS: tuple[CurrencyMethodDefinition, ...] = (
+    CurrencyMethodDefinition(
+        method=("currency", "transmute"),
+        coord_field="transmute",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "augmentation", "augmentation_normal"),
+        coord_field="augment",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "alteration"),
+        coord_field="alteration",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "regal", "regal_normal"),
+        coord_field="regal",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "alchemy"),
+        coord_field="alchemy",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "chaos"),
+        coord_field="chaos",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "exalted", "exalted_normal"),
+        coord_field="exalt",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "scour"),
+        coord_field="scour",
+    ),
+    CurrencyMethodDefinition(
+        method=("currency", "annul"),
+        coord_field="annul",
+    ),
+)
+
+CURRENCY_METHOD_BY_SIGNATURE: Mapping[
+    tuple[str, ...], CurrencyMethodDefinition
+] = MappingProxyType({
+    definition.method: definition
+    for definition in CURRENCY_METHODS
+})
+
+
+class CrafterMethod(ABC):
+    method: tuple[str, ...]
+
+    @abstractmethod
+    def invoke(self, crafter: Crafter):
+        pass
+
+
+class CrafterMethodCheck(CrafterMethod):
+    method = ("check", )
+
+    def invoke(self, crafter: Crafter):
+        del crafter
+        pass
+
+
+def _normalize_method(method: Iterable[str]) -> tuple[str, ...]:
+    return tuple(part.casefold() for part in method)
+
+
+class CrafterMethodCurrency(CrafterMethod):
+    definition: CurrencyMethodDefinition
+
+    def __init__(self, definition: CurrencyMethodDefinition) -> None:
+        super().__init__()
+        self.definition = definition
+        self.method = _normalize_method(
+            definition.method)
+
+    def invoke(self, crafter: Crafter):
+        coords = self._get_currency_coordinates(crafter.config)
+        showcase = crafter.config.showcase
+        crafter.move_to(coords)
+        crafter.right_click()
+        crafter.move_to(showcase)
+        crafter.left_click()
+
+    def _get_currency_coordinates(
+        self,
+        config: GuiConfig,
+    ) -> Coordinates:
+        definition = CURRENCY_METHOD_BY_SIGNATURE.get(self.method)
+
+        if definition is None:
+            raise ValueError(f"Unsupported currency method: {self.method!r}")
+
+        coordinate = getattr(config, definition.coord_field, None)
+        if coordinate is None:
+            raise ValueError(
+                f"GuiConfig has no {definition.coord_field!r} coordinate "
+                f"for method {self.method!r}"
+            )
+
+        return coordinate
+
+
+DEFAULT_CRAFTER_METHODS: tuple[CrafterMethod, ...] = (
+    CrafterMethodCheck(),
+    *[CrafterMethodCurrency(method) for method in CURRENCY_METHODS]
+)
+
+
+class Crafter:
+    config: GuiConfig
+    recipe: Recipe
+    poecd: PoeCd
+    options: CraftingOptions
+    step_index: int = 0
+    crafter_methods: tuple[CrafterMethod, ...]
+
+    def __init__(self, config: GuiConfig, recipe: Recipe, poecd: PoeCd, options: CraftingOptions, *, step_index: int = 0, crafter_methods: tuple[CrafterMethod, ...] | None = None):
+        self.config = config
+        self.recipe = recipe
+        self.poecd = poecd
+        self.options = options
+        self.step_index = step_index
+        self.crafter_methods = crafter_methods or DEFAULT_CRAFTER_METHODS
+
+    def execute(self):
+        try:
+            self._ensure_window_focus()
+        except:
+            print("Failed to focus Path of Exile")
+            raise
+        try:
+            self._invoke_step()
+        except:
+            print("Failed to invoke the crafting step")
+            raise
+        item: Item
+        try:
+            item = self._get_item()
+        except:
+            print("Invalid item copied by CTRL+ALT+C")
+            raise
+        result: CraftStepResult
+        try:
+            result = self.evaluate_item(item)
+        except:
+            print("Failed to evaluate crafting step")
+            raise
+        return result
+
+    def _get_item(self) -> Item:
+        logging.debug("begin get item")
+        showcase = self.config.showcase
+
+        self.move_to(showcase)
+        self.hotkey("ctrl", "alt", "c")
+        time.sleep(self._duration(0.50))
+
+        text = pyperclip.paste()
+
+        if not text.strip():
+            raise ValueError(
+                "The clipboard is empty after copying the showcase item"
+            )
+        pyperclip.copy('')
+
+        logging.debug("done get item")
+        return parse_item(text)
+
+    def _invoke_step(self):
+        logging.debug("begin invoke step %d", self.step_index)
+
+        if not 0 <= self.step_index < len(self.recipe.config):
+            raise IndexError(
+                f"Recipe step index out of range: {self.step_index}"
+            )
+
+        step = self.recipe.config[self.step_index]
+        method_signature = _normalize_method(step.method)
+        print(f"Step {self.step_index+1}: {method_signature!r}")
+
+        crafter_method = next(
+            (
+                candidate
+                for candidate in self.crafter_methods
+                if candidate.method == method_signature
+            ),
+            None,
+        )
+
+        if crafter_method is None:
+            raise ValueError(
+                f"Unsupported crafting method at step {self.step_index}: "
+                f"{step.method!r}"
+            )
+
+        crafter_method.invoke(self)
+
+        logging.debug(
+            "done invoke step %d using method %r",
+            self.step_index,
+            method_signature,
+        )
+
+    def evaluate_item(self, item: Item) -> CraftStepResult:
+        logging.debug("begin evaluating item %s", repr(item))
+
+        step = self.recipe.config[self.step_index]
+        if step.autopass:
+            logging.debug("done evaluating step autopass")
+            return self._goto_step(ItemMatchResult(True), step.actions.win, step.actions.win_route)
+        matcher = ItemMatcher(step, self.recipe.data, self.poecd)
+        result = matcher.evaluate(item)
+
+        logging.debug("done evaluating item %s", result)
+        if result.success:
+            return self._goto_step(result, step.actions.win, step.actions.win_route)
+        else:
+            return self._goto_step(result, step.actions.fail, step.actions.fail_route)
+
+    def _goto_step(self, match: ItemMatchResult, action: str, route: str | None) -> CraftStepResult:
+        logging.debug("begin goto step %s %s", action, route)
+
+        action = action.casefold()
+        if action == 'loop':
+            pass
+        elif action == 'restart':
+            self.step_index = 0
+        elif action == 'next':
+            self.step_index += 1
+        elif action == 'end':
+            self.step_index = len(self.recipe.config)
+        elif action == 'step':
+            if route == None:
+                raise ValueError(
+                    "Recipe step with the `step` action must specify a route"
+                )
+            self.step_index = int(route) - 1
+        else:
+            raise ValueError(f"Unknown action {action}")
+
+        done = self.step_index >= len(self.recipe.config)
+        if done:
+            print("Done")
+        else:
+            print(
+                f"{'Success' if match.success else 'Failed'} {action} {route or ''}")
+        if not match.success:
+            print(
+                f"Conditions failed {', '.join(_repr_condition(x, self.poecd) for x in match.failed)}"
+            )
+        logging.debug("done goto step")
+        return CraftStepResult(match, done)
+
+    def _ensure_window_focus(self):
+        poe = pwc.getWindowsWithTitle("Path of Exile").pop()
+        if poe == None:
+            raise ValueError("Path of Exile is not running")
+        if poe != pwc.getActiveWindow():
+            logging.info("Path of Exile is not focussed")
+            self.move_to(self.config.showcase)
+            self.right_click()
+
+    def _duration(self, duration: float) -> float:
+        return random.uniform(duration*0.85, duration*1.15)
+
+    def _position(self, pos: int) -> int:
+        return int(random.uniform(pos-4, pos+4))
+
+    def move_to(self, coords: Coordinates):
+        pyautogui.moveTo(
+            self._position(coords.x),
+            self._position(coords.y),
+            duration=self._duration(1 / self.options.speed * 0.75),
+            tween=pytweening.easeInOutElastic
+        )
+        time.sleep(1 / self.options.speed * 0.25)
+
+    def left_click(self):
+        pyautogui.leftClick(duration=self._duration(1 / self.options.speed * 0.75))
+        time.sleep(1 / self.options.speed * 0.25)
+
+    def right_click(self):
+        pyautogui.rightClick(duration=self._duration(1 / self.options.speed * 0.75))
+        time.sleep(1 / self.options.speed * 0.25)
+
+    def hotkey(self, *keys: str):
+        pyautogui.hotkey(*keys, interval=self._duration(1 / self.options.speed * 0.75))
+        time.sleep(1 / self.options.speed * 0.25)
+
+
+def _repr_condition(cond: RecipeCondition, poecd: PoeCd):
+    if cond.id.isdigit():
+        modifier = poecd.modifiers.get(cond.id)
+        return modifier.name_modifier if modifier != None else f"modifier #{cond.id}"
+    return cond.id
