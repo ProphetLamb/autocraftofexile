@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const windowStateManager = require('electron-window-state');
 const { app, BrowserWindow, ipcMain } = require('electron');
-const contextMenu = require('electron-context-menu');
-const serve = require('electron-serve');
+const { default: contextMenu } = require('electron-context-menu');
+const { default: serve } = require('electron-serve');
 const path = require('path');
 
 try {
@@ -18,7 +19,7 @@ let mainWindow;
 function createWindow() {
 	let windowState = windowStateManager({
 		defaultWidth: 800,
-		defaultHeight: 600,
+		defaultHeight: 600
 	});
 
 	const mainWindow = new BrowserWindow({
@@ -27,7 +28,7 @@ function createWindow() {
 		autoHideMenuBar: true,
 		trafficLightPosition: {
 			x: 17,
-			y: 32,
+			y: 32
 		},
 		minHeight: 450,
 		minWidth: 500,
@@ -37,12 +38,12 @@ function createWindow() {
 			nodeIntegration: true,
 			spellcheck: false,
 			devTools: dev,
-			preload: path.join(__dirname, 'preload.cjs'),
+			preload: path.join(__dirname, 'preload.cjs')
 		},
 		x: windowState.x,
 		y: windowState.y,
 		width: windowState.width,
-		height: windowState.height,
+		height: windowState.height
 	});
 
 	windowState.manage(mainWindow);
@@ -65,9 +66,9 @@ contextMenu({
 	showCopyImage: false,
 	prepend: (defaultActions, params, browserWindow) => [
 		{
-			label: 'Make App 💻',
-		},
-	],
+			label: 'Make App 💻'
+		}
+	]
 });
 
 function loadVite(port) {
