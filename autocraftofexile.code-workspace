@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"name": "cli",
+			"path": "cli"
+		},
+		{
+			"name": "gui",
+			"path": "gui"
+		},
+		{
+			"name": "root",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"cli/": true,
+			"gui/": true,
+		}
+	}
+}
