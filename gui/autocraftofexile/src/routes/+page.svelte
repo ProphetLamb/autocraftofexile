@@ -1,2 +1,19 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang="ts">
+	import { browser } from "$app/env";
+
+    let desktop = $state("")
+
+	if (window.electron && browser) {
+		window.electron.receive('from-main', (data: any) => {
+			desktop = `Received Message "${data}" from Electron`;
+			console.log(desktop);
+		});
+	}
+</script>
+
+<div class="card h-56 w-56 justify-center self-center bg-amber-600">
+	<button type="button" class="btn" onclick={async () => await window.electron.send('to-main', 2)}
+		>Test</button
+	>
+    <textarea value={desktop}></textarea>
+</div>

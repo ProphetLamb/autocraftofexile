@@ -23,15 +23,10 @@ function createWindow() {
 	});
 
 	const mainWindow = new BrowserWindow({
-		backgroundColor: 'whitesmoke',
-		titleBarStyle: 'hidden',
-		autoHideMenuBar: true,
-		trafficLightPosition: {
-			x: 17,
-			y: 32
-		},
-		minHeight: 450,
-		minWidth: 500,
+		resizable: false,
+		frame: false,
+    	transparent: true,
+		fullscreen: true,
 		webPreferences: {
 			enableRemoteModule: true,
 			contextIsolation: true,
@@ -66,7 +61,7 @@ contextMenu({
 	showCopyImage: false,
 	prepend: (defaultActions, params, browserWindow) => [
 		{
-			label: 'Make App 💻'
+			label: 'Make App 💻',
 		}
 	]
 });
