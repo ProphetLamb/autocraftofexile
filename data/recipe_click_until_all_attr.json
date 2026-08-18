@@ -1,0 +1,223 @@
+{
+  "settings": {
+    "bgroup": 1,
+    "base": "1",
+    "bitem": "8326",
+    "ilvl": 83,
+    "rarity": "rare",
+    "influences": [
+      "6"
+    ],
+    "quality": 20,
+    "corrupted": 0,
+    "destroyed": 0,
+    "implicits": [
+      "{ Implicit Modifier }",
+      "Left ring slot: 15% reduced Skill Effect Duration",
+      "Right ring slot: 15% increased Skill Effect Duration"
+    ],
+    "veils": [],
+    "socketed": [],
+    "sockets": 0
+  },
+  "data": {
+    "fmodpool": null,
+    "eldritch": null,
+    "dominance": null,
+    "mtypes": null,
+    "implicits": null,
+    "rollable_implicits": 0,
+    "cmodpool": null,
+    "hmodpool": null,
+    "maxaffgrp": {
+      "prefix": 3,
+      "suffix": 3
+    },
+    "is_rare": 1,
+    "is_fossil": 1,
+    "is_craftable": 1,
+    "is_influenced": 1,
+    "is_essence": 1,
+    "is_catalyst": 1,
+    "is_notable": 0,
+    "unique_notable": 0,
+    "iaffixes": [
+      {
+        "atype": "prefix",
+        "id": "1694",
+        "mgrp": "6",
+        "modgroups": [
+          "IncreasedPhysicalDamageReductionRatingPercent"
+        ],
+        "weight": "500",
+        "nvalues": "[[13,15]]",
+        "tindex": 2,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          14
+        ]
+      },
+      {
+        "atype": "prefix",
+        "id": "1767",
+        "mgrp": "1",
+        "modgroups": [
+          "IncreasedEnergyShield"
+        ],
+        "weight": "1000",
+        "nvalues": "[[38,43]]",
+        "tindex": 9,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          42
+        ]
+      },
+      {
+        "atype": "prefix",
+        "id": "1777",
+        "mgrp": "1",
+        "modgroups": [
+          "IncreasedMana"
+        ],
+        "weight": "1000",
+        "nvalues": "[[25,29]]",
+        "tindex": 2,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          29
+        ]
+      },
+      {
+        "atype": "suffix",
+        "id": "1966",
+        "mgrp": "1",
+        "modgroups": [
+          "LightningResistance"
+        ],
+        "weight": "1000",
+        "nvalues": "[[36,41]]",
+        "tindex": 5,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          39
+        ]
+      },
+      {
+        "atype": "suffix",
+        "id": "2049",
+        "mgrp": "1",
+        "modgroups": [
+          "ManaGainedFromEnemyDeath"
+        ],
+        "weight": "500",
+        "nvalues": "[[7,10]]",
+        "tindex": 1,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          10
+        ]
+      },
+      {
+        "atype": "suffix",
+        "id": "2694",
+        "mgrp": "13",
+        "modgroups": [
+          "Strength"
+        ],
+        "weight": "0",
+        "nvalues": "[[51,58]]",
+        "tindex": 4,
+        "frac": 0,
+        "maven": 0,
+        "bench": 0,
+        "rolls": [
+          55
+        ]
+      }
+    ],
+    "meta_flags": {},
+    "imprint": null,
+    "enchant": "",
+    "iaffbt": {
+      "prefix": 3,
+      "suffix": 3
+    },
+    "cmaxaffgrp": {
+      "prefix": 3,
+      "suffix": 3
+    },
+    "mgrpdata": null,
+    "affbymgrp": null,
+    "veiledmods": null
+  },
+  "config": [
+    {
+      "method": [
+        "click",
+        "left_click_drag"
+      ],
+      "mopts": null,
+      "autopass": false,
+      "filters": [
+        {
+          "type": "and",
+          "treshold": null,
+          "conds": [
+            {
+              "id": "525",
+              "treshold": 1,
+              "max": null,
+              "base": null
+            }
+          ]
+        }
+      ],
+      "vfilter": [],
+      "actions": {
+        "win": "next",
+        "win_route": null,
+        "fail": "loop",
+        "fail_route": null
+      }
+    }
+  ],
+  "flow": null,
+  "states": {
+    "init": {
+      "rarity": "rare",
+      "dominance": null,
+      "influences": [
+        "6"
+      ],
+      "meta": null
+    },
+    "current": {
+      "rarity": null,
+      "dominance": null,
+      "influences": null,
+      "meta": null
+    },
+    "states": [
+      {
+        "rarity": "rare",
+        "dominance": null,
+        "influences": [
+          "6"
+        ],
+        "meta": null
+      }
+    ]
+  },
+  "results": null,
+  "items": null
+}
