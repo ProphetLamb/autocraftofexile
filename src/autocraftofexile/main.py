@@ -62,7 +62,7 @@ def main(
         recipe_file,
         gui_file,
         log_file,
-        lambda o, ct: ShowcaseCrafter(o, ct),
+        ShowcaseCrafter,
     )
 
 
