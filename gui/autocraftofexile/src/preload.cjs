@@ -2,13 +2,15 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
-	send: (channel, data) => {
-		ipcRenderer.send(channel, data);
-	},
-	sendSync: (channel, data) => {
-		ipcRenderer.sendSync(channel, data);
-	},
-	receive: (channel, func) => {
-		ipcRenderer.on(channel, (event, ...args) => func(...args));
-	},
+  send: (channel, ...args) => {
+    ipcRenderer.send(channel, ...args);
+  },
+
+  invoke: (channel, ...args) => {
+    return ipcRenderer.invoke(channel, ...args);
+  },
+
+  receive: (channel, listener) => {
+    ipcRenderer.on(channel, (_event, ...args) => listener(...args));
+  }
 });
