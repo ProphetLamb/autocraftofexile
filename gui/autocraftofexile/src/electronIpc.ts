@@ -1,4 +1,4 @@
-import type { IpcMain as BaseIpcMain, IpcMainEvent as BaseIpcMainEvent, WebContents as BaseWebContents } from 'electron';
+import type { IpcMain as BaseIpcMain, IpcMainEvent as BaseIpcMainEvent, WebContents as BaseWebContents, IpcMainInvokeEvent } from 'electron';
 
 /**
  * Channels the renderer may initiate with ipcRenderer.send(...)
@@ -47,10 +47,14 @@ export interface IpcMainEvent<
  * Strongly-typed IpcMain: only allow .on for channels the renderer may initiate.
  */
 export interface IpcMain extends BaseIpcMain {
-	on<K extends keyof RendererSendChannels | keyof RendererInvokeChannels>(
+	on<K extends keyof RendererSendChannels>(
 		channel: K,
 		listener: (event: IpcMainEvent<K>, ...args: IpcMainListenerArgs<K>) => void
 	): this;
+	handle<K extends keyof RendererInvokeChannels>(
+		channel: K,
+		handler: (event: IpcMainInvokeEvent, ...args: IpcMainListenerArgs<K>) => Promise<RendererInvokeChannels[K]["return"]> | RendererInvokeChannels[K]["return"]
+	): void;
 }
 
 export interface WebContents extends BaseWebContents {

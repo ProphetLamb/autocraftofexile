@@ -114,8 +114,8 @@ const webContents = () => mainWindow.webContents;
 ipc.on('to-main', (event, count) => {
 	event.reply('from-main', `next count is ${count + 1}`);
 });
-ipc.on('get-user', (event, name) => {
-	event.returnValue = { id: 12, name: 'Christian' };
+ipc.handle('get-user', (event, name) => {
+	return { id: 12, name: 'Christian' };
 });
 ipc.on('hide', (event) => {
 	mainWindow.hide();

@@ -3,6 +3,8 @@
 	import { dk, wm } from '$lib/client/windowing';
 	import Window from '$lib/client/Window.svelte';
 	import type { EventHandler, KeyboardEventHandler } from 'svelte/elements';
+	import { onMount } from 'svelte';
+	import type { WindowUpdate } from '@surdeddd/wmkit';
 
 	wm.open({ id: 'main', title: 'Hello' });
 
@@ -13,13 +15,20 @@
 		desktop = `Received Message "${data}" from Electron`;
 		console.log(desktop);
 	});
-	const props = $state({ maximizable: false, minimizable: false });
+	const props = $state({ maximizable: false, minimizable: false } as Partial<WindowUpdate>);
 	const hide = () => window.electron.send('hide');
 	window.addEventListener('keyup', (e) => {
 		if (e.key == 'Escape' && !e.defaultPrevented && !e.altKey && !e.ctrlKey) {
 			hide();
 		}
 	});
+
+	onMount(async () => {
+		const user = await window.electron.invoke('get-user', 12)
+		if (user) {
+			props.title = `Hello ${user.name}!`
+		}
+	})
 </script>
 
 <div use:dk.desktop class="h-screen" onfocus={hide}>
