@@ -1,4 +1,4 @@
-import type { IpcMain as BaseIpcMain, IpcMainEvent as BaseIpcMainEvent } from 'electron';
+import type { IpcMain as BaseIpcMain, IpcMainEvent as BaseIpcMainEvent, WebContents as BaseWebContents } from 'electron';
 
 /**
  * Channels the renderer may initiate with ipcRenderer.send(...)
@@ -51,6 +51,10 @@ export interface IpcMain extends BaseIpcMain {
 		channel: K,
 		listener: (event: IpcMainEvent<K>, ...args: IpcMainListenerArgs<K>) => void
 	): this;
+}
+
+export interface WebContents extends BaseWebContents {
+	send<L extends keyof MainToRendererChannels>(channel: L, ...args: MainToRendererChannels[L]): void;
 }
 
 export type RendererElectron = {

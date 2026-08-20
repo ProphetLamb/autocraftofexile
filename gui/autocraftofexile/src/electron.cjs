@@ -5,7 +5,9 @@ const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const { default: contextMenu } = require('electron-context-menu');
 const { default: serve } = require('electron-serve');
 const path = require('path');
+const { electron } = require('process');
 /** @typedef {import('./electronIpc').IpcMain} IpcMain */
+/** @typedef {import('./electronIpc').WebContents} WebContents */
 
 try {
 	require('electron-reloader')(module);
@@ -45,10 +47,16 @@ function createWindow() {
 	});
 
 	windowState.manage(mainWindow);
+	if (!dev) {
+		mainWindow.setSkipTaskbar(true);
+	}
+	mainWindow.removeMenu();
 
 	mainWindow.once('ready-to-show', () => {
-		mainWindow.show();
-		mainWindow.focus();
+		if (dev) {
+			mainWindow.show();
+			mainWindow.focus();
+		}
 	});
 
 	mainWindow.on('close', () => {
@@ -97,16 +105,14 @@ app.on('activate', () => {
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') app.quit();
 });
-Menu.setApplicationMenu(null)
-if (!dev) {
-	mainWindow.setSkipTaskbar(true);
-}
 
 /** @type {IpcMain} */
 const ipc = ipcMain;
+/** @type {() => WebContents} */
+const webContents = () => mainWindow.webContents;
 
 ipc.on('to-main', (event, count) => {
-	mainWindow.webContents.send('from-main', `next count is ${count + 1}`);
+	event.reply('from-main', `next count is ${count + 1}`);
 });
 ipc.on('get-user', (event, name) => {
 	event.returnValue = { id: 12, name: 'Christian' };
