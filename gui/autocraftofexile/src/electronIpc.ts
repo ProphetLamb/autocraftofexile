@@ -6,6 +6,8 @@ import type { IpcMain as BaseIpcMain, IpcMainEvent as BaseIpcMainEvent } from 'e
  */
 export interface RendererSendChannels {
 	'to-main': [count: number];
+	'hide': [];
+	'show': [];
 }
 
 /**
@@ -22,7 +24,6 @@ export interface RendererInvokeChannels {
  */
 export interface MainToRendererChannels {
 	'from-main': [data: string];
-	'from-main2': [age: number];
 }
 
 /* Listener arg resolver for ipcMain.on */
@@ -64,7 +65,7 @@ export type RendererElectron = {
 	invoke<K extends keyof RendererInvokeChannels>(
 		channel: K,
 		...args: RendererInvokeChannels[K]['args']
-	): Promise<RendererInvokeChannels[K]['return']>;
+	): Promise<RendererInvokeChannels[K]['return'] | undefined>;
 
 	/**
 	 * receive: only channels the main process is allowed to send (MainToRendererChannels)

@@ -2,6 +2,7 @@
 	import '@surdeddd/wmkit/themes/glass.css';
 	import { dk, wm } from '$lib/client/windowing';
 	import Window from '$lib/client/Window.svelte';
+	import type { EventHandler, KeyboardEventHandler } from 'svelte/elements';
 
 	wm.open({ id: 'main', title: 'Hello' });
 
@@ -13,10 +14,20 @@
 		console.log(desktop);
 	});
 	const props = $state({ maximizable: false, minimizable: false });
+	const hide = () => window.electron.send('hide');
+	window.addEventListener('keyup', (e) => {
+		if (e.key == 'Escape' && !e.defaultPrevented && !e.altKey && !e.ctrlKey) {
+			hide();
+		}
+	});
 </script>
 
-<div use:dk.desktop class="h-screen">
-	<Window id="main" {props}>
+<div use:dk.desktop class="h-screen" onfocus={hide}>
+	<Window
+		id="main"
+		{props}
+		onclose={hide}
+	>
 		<p>stores and actions, no wrapper components</p>
 		<button
 			type="button"

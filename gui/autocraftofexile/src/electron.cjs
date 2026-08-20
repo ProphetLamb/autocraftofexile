@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const windowStateManager = require('electron-window-state');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const { default: contextMenu } = require('electron-context-menu');
 const { default: serve } = require('electron-serve');
 const path = require('path');
@@ -97,6 +97,10 @@ app.on('activate', () => {
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') app.quit();
 });
+Menu.setApplicationMenu(null)
+if (!dev) {
+	mainWindow.setSkipTaskbar(true);
+}
 
 /** @type {IpcMain} */
 const ipc = ipcMain;
@@ -106,4 +110,10 @@ ipc.on('to-main', (event, count) => {
 });
 ipc.on('get-user', (event, name) => {
 	event.returnValue = { id: 12, name: 'Christian' };
+});
+ipc.on('hide', (event) => {
+	mainWindow.hide();
+});
+ipc.on('show', (event) => {
+	mainWindow.show();
 });
