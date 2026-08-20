@@ -2,7 +2,6 @@
 	import '@surdeddd/wmkit/themes/glass.css';
 	import { dk, wm } from '$lib/client/windowing';
 	import Window from '$lib/client/Window.svelte';
-	import type { EventHandler, KeyboardEventHandler } from 'svelte/elements';
 	import { onMount } from 'svelte';
 	import type { WindowUpdate } from '@surdeddd/wmkit';
 
@@ -36,6 +35,7 @@
 		id="main"
 		{props}
 		onclose={hide}
+		class="flex flex-col space-y-2"
 	>
 		<p>stores and actions, no wrapper components</p>
 		<button

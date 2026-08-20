@@ -259,7 +259,7 @@
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin='default'] {
-	@apply card rounded-md text-current shadow-md;
+	@apply card rounded-md text-current shadow-md h-full;
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin='default'] [data-wm-drag] {

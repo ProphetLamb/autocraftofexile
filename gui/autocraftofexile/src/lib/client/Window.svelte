@@ -3,7 +3,6 @@
 	import { type ManagerEvents, type WindowUpdate } from '@surdeddd/wmkit';
 	import { dk, wm } from '$lib/client/windowing';
 	import { type Snippet } from 'svelte';
-	import type { MouseEventHandler } from 'svelte/elements';
 
 	export interface Props {
 		id: string;
