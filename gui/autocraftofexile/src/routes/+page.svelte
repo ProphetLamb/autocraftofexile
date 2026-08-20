@@ -1,20 +1,31 @@
 <script lang="ts">
-	import { browser } from "$app/env";
+	import '@surdeddd/wmkit/themes/glass.css';
+	import { dk, wm } from '$lib/client/windowing';
+	import Window from '$lib/client/Window.svelte';
 
-    let count = $state(0)
-    let desktop = $state("")
+	wm.open({ id: 'main', title: 'Hello' });
 
-	if (window.electron && browser) {
-		window.electron.receive('from-main', (data) => {
-			desktop = `Received Message "${data}" from Electron`;
-			console.log(desktop);
-		});
-	}
+	let count = $state(0);
+	let desktop = $state('');
+
+	window.electron.receive('from-main', (data) => {
+		desktop = `Received Message "${data}" from Electron`;
+		console.log(desktop);
+	});
+	const props = $state({ maximizable: false, minimizable: false });
 </script>
 
-<div class="card h-56 w-56 justify-center self-center bg-amber-600">
-	<button type="button" class="btn" onclick={() => window.electron.send('to-main', count++)}
-		>Test</button
-	>
-    <textarea value={desktop}></textarea>
+<div use:dk.desktop class="h-screen">
+	<Window id="main" {props}>
+		<p>stores and actions, no wrapper components</p>
+		<button
+			type="button"
+			class="btn preset-filled-brand"
+			onclick={() => {
+				window.electron.send('to-main', count++);
+				props.maximizable = !props.maximizable;
+			}}>Test</button
+		>
+		<textarea class="textarea" value={desktop}></textarea>
+	</Window>
 </div>
