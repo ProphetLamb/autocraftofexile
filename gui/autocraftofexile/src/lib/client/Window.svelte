@@ -15,6 +15,8 @@
 		titlebarLeft?: Snippet;
 		children?: Snippet;
 		onclose?: (e: ManagerEvents['close']) => void;
+		onopen?: (e: ManagerEvents['open']) => void;
+		onresize?: (e: ManagerEvents['resize']) => void;
 	}
 	const {
 		id,
@@ -26,22 +28,40 @@
 		title,
 		titlebarLeft,
 		children,
-		onclose
+		onclose,
+		onopen,
+		onresize
 	}: Props = $props();
 	// svelte-ignore state_referenced_locally
 	const windowState = wmWindowStore(wm, id);
-	// svelte-ignore state_referenced_locally
-	if (onclose) {
+	const destroy: (() => any | Promise<any>)[] = [
 		wm.on('close', (e) => {
 			if (e.window.id === id) {
-				onclose(e);
+				onclose?.(e);
 			}
-		});
-	}
+		}),
+		wm.on('open', (e) => {
+			if (e.window.id === id) {
+				onopen?.(e);
+			}
+		}),
+		wm.on('resize', (e) => {
+			if (e.window.id === id) {
+				onresize?.(e);
+			}
+		})
+	];
 
 	$effect(() => {
 		wm.update(id, props as WindowUpdate);
 	});
+	$effect.pre(() => {
+		if (!wm.get(id)) {
+			// @ts-expect-error
+			wm.open({ ...(props || {}), id });
+		}
+		return () => Promise.all(destroy.map((f) => f()));
+	})
 
 	const close = (e: KeyboardEvent) => {
 		e.preventDefault();

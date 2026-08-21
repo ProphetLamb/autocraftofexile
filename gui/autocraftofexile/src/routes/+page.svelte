@@ -1,11 +1,9 @@
 <script lang="ts">
 	import '@surdeddd/wmkit/themes/glass.css';
-	import { dk, wm } from '$lib/client/windowing';
+	import { dk } from '$lib/client/windowing';
 	import Window from '$lib/client/Window.svelte';
 	import { onMount } from 'svelte';
 	import type { WindowUpdate } from '@surdeddd/wmkit';
-
-	wm.open({ id: 'main', title: 'Hello' });
 
 	let count = $state(0);
 	let desktop = $state('');

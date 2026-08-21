@@ -263,7 +263,7 @@
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin='default'] [data-wm-drag] {
-	@apply flex items-center-safe rounded-t-md border-b-2 border-b-tertiary-200-800/25 bg-surface-200-800 px-2 py-0;
+	@apply flex items-center-safe rounded-t-md bg-surface-100-900 px-2 py-0;
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin='custom'] [data-wm-close] {
@@ -277,9 +277,9 @@
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin='default'] [data-wm-title] {
-	@apply flex-1 text-lg text-current uppercase;
+	@apply flex-1 text-lg text-current;
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin='default'] [data-wm-content] {
-	@apply bg-surface-100-900 px-2 py-0;
+	@apply bg-surface-50-950 px-2 py-0 rounded-b-md;
 }

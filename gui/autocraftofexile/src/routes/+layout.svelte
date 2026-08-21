@@ -5,7 +5,9 @@
 
 	let { children } = $props();
 
-	if (dev) window.electron.send('show');
+	if (dev) {
+		window.electron.send('show');
+	}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>

@@ -2,14 +2,30 @@ import { createManager, createDesktop } from '@surdeddd/wmkit/svelte';
 export const wm = createManager();
 export const dk = createDesktop(wm);
 
-if (import.meta.hot) {
-    if (import.meta.hot.data.wm) {
-        wm.hydrate(import.meta.hot.data.wm);
+restoreWm();
+setInterval(saveWm, 2000);
+
+export function restoreWm() {
+    const serialized = import.meta.hot?.data.wm ?? window?.localStorage?.getItem('wm')
+    if (serialized) {
+        wm.hydrate(JSON.parse(serialized));
     }
+}
+
+export function saveWm() {
+    const serialized = JSON.stringify(wm.serialize());
+    if (import.meta.hot) {
+        import.meta.hot.data.wm = serialized
+    }
+    if (window?.localStorage) {
+        window.localStorage.setItem('wm', serialized)
+    }
+}
+
+if (import.meta.hot) {
+    restoreWm();
     import.meta.hot.accept();
     import.meta.hot.dispose(() => {
-        if (import.meta.hot) {
-            import.meta.hot.data.wm = wm.serialize();
-        }
+        saveWm();
     });
 }
