@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from 'electron';
+import type { RendererElectron } from '../electron/ipc'
 
 contextBridge.exposeInMainWorld('electron', {
   send: (channel, ...args) => {
@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electron', {
   },
 
   receive: (channel, listener) => {
+    // @ts-expect-error ..args genereic cast
     ipcRenderer.on(channel, (_event, ...args) => listener(...args));
   }
-});
+} as RendererElectron);

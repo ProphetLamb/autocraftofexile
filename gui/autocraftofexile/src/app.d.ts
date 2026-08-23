@@ -1,4 +1,4 @@
-import type { RendererElectron } from './electronIpc';
+import type { RendererElectron } from './electron/ipc';
 
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
