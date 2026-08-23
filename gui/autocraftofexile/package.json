@@ -1,24 +1,7 @@
 {
 	"name": "autocraftofexile",
-	"private": true,
 	"version": "0.0.1",
-	"type": "module",
 	"main": "src/electron/main.mts",
-	"scripts": {
-		"dev": "cross-env NODE_ENV=dev bun run dev:all",
-		"dev:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"bun run dev:svelte\" \"bun run dev:electron\"",
-		"dev:svelte": "vite dev",
-		"dev:electron": "electron src/electron/main.mts",
-		"build": "cross-env NODE_ENV=production bun run build:svelte && bun run build:electron",
-		"build:svelte": "vite build",
-		"build:electron": "electron-builder -mwl --config build.config.json",
-		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
-	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@skeletonlabs/skeleton": "^5.0.1",
@@ -56,5 +39,25 @@
 	},
 	"allowScripts": {
 		"electron": true
+	},
+	"private": true,
+	"scripts": {
+		"dev": "cross-env NODE_ENV=dev bun run dev:all",
+		"dev:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"bun run dev:svelte\" \"bun run dev:electron\"",
+		"dev:svelte": "vite dev",
+		"dev:electron": "electron src/electron/main.mts",
+		"build": "cross-env NODE_ENV=production bun run build:svelte && bun run build:electron",
+		"build:svelte": "vite build",
+		"build:electron": "electron-builder -mwl --config build.config.json",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write ."
+	},
+	"type": "module",
+	"dependencies": {
+		"electron-store": "^11.0.2"
 	}
 }

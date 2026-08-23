@@ -12,6 +12,6 @@ contextBridge.exposeInMainWorld('electron', {
 
   receive: (channel, listener) => {
     // @ts-expect-error ..args genereic cast
-    ipcRenderer.on(channel, (_event, ...args) => listener(...args));
+    ipcRenderer.on(channel, (_event, ...args) => listener(...(args || [])));
   }
 } as RendererElectron);

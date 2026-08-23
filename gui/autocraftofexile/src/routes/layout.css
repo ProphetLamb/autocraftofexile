@@ -259,21 +259,25 @@
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin="default"] {
-  @apply card rounded-md text-current shadow-md h-full;
+  @apply card rounded-md text-current shadow-md h-full border-0 outline-0;
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin="default"] [data-wm-drag] {
   @apply flex items-center-safe rounded-t-md bg-surface-100-900 px-2 py-0;
+
+  > span:not([data-wm-title]) {
+    @apply grid grid-flow-col gap-2 items-center-safe;
+  }
 }
 
-[data-wm-desktop] [data-wm-window][data-wm-skin="custom"] [data-wm-close] {
-  @apply btn btn-icon bg-error-600-400;
+[data-wm-desktop] [data-wm-window][data-wm-skin="default"] [data-wm-close] {
+  @apply btn btn-icon rounded-full w-4 h-4 bg-surface-600-400;
 }
-[data-wm-desktop] [data-wm-window][data-wm-skin="custom"] [data-wm-minimize] {
-  @apply btn btn-icon bg-warning-600-400;
+[data-wm-desktop] [data-wm-window][data-wm-skin="default"] [data-wm-minimize] {
+  @apply btn btn-icon rounded-full w-4 h-4 bg-error-600-400;
 }
-[data-wm-desktop] [data-wm-window][data-wm-skin="custom"] [data-wm-maximize] {
-  @apply btn btn-icon bg-success-600-400;
+[data-wm-desktop] [data-wm-window][data-wm-skin="default"] [data-wm-maximize] {
+  @apply btn btn-icon rounded-full w-4 h-4 bg-success-600-400;
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin="default"] [data-wm-title] {
@@ -281,5 +285,5 @@
 }
 
 [data-wm-desktop] [data-wm-window][data-wm-skin="default"] [data-wm-content] {
-  @apply bg-surface-50-950 px-2 py-0 rounded-b-md;
+  @apply bg-surface-50-950 px-2 py-0 rounded-b-md h-full;
 }

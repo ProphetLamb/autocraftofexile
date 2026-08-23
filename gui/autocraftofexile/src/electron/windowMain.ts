@@ -1,24 +1,33 @@
-import { BrowserWindow, globalShortcut } from "electron";
+import { BrowserWindow } from "electron";
 import {
   OverlayController,
   OVERLAY_WINDOW_OPTS,
 } from "electron-overlay-window";
 import path from "path";
+import type Store from "electron-store";
+import { type Config } from "./config.ts";
+import {
+  makeInteractive,
+  type MakeInteractiveParam,
+  type MakeInteractiveResult,
+} from "./interactivity.ts";
 
-type CreateWindowConfig = { dev: boolean } & MakeInteractiveConfig;
+export interface CreateWindowParam extends MakeInteractiveParam {
+  dev: boolean;
+  config: Store<Config>;
+}
 
-export function createWindow(config: CreateWindowConfig) {
+export interface CreateWindowResult {
+  window: BrowserWindow;
+  interativity: MakeInteractiveResult;
+}
+
+export function createWindow(config: CreateWindowParam): CreateWindowResult {
   const window = new BrowserWindow({
     resizable: false,
     frame: false,
     transparent: true,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: true,
-      spellcheck: false,
-      devTools: config.dev,
-      preload: path.join(import.meta.dirname, "../preload/main.mts"),
-    },
+    webPreferences: getWebPreferences(config.dev),
     ...OVERLAY_WINDOW_OPTS,
   });
 
@@ -26,43 +35,26 @@ export function createWindow(config: CreateWindowConfig) {
     window.setSkipTaskbar(true);
   }
   window.removeMenu();
-  makeInteractive(window, config);
+  const interativity = makeInteractive(window, config);
   OverlayController.attachByTitle(window, "Untitled - Notepad");
 
-  return window;
+  return { window, interativity };
 }
 
-type MakeInteractiveConfig = { toggleMouseKey: string; toggleShowKey: string };
-
-function makeInteractive(window: BrowserWindow, config: MakeInteractiveConfig) {
-  let isInteractable = false;
-
-  function toggleOverlayState() {
-    if (isInteractable) {
-      isInteractable = false;
-      OverlayController.focusTarget();
-      window.webContents.send("focus-change", false);
-    } else {
-      isInteractable = true;
-      OverlayController.activateOverlay();
-      window.webContents.send("focus-change", true);
-    }
-  }
-
-  window.on("blur", () => {
-    isInteractable = false;
-    window.webContents.send("focus-change", false);
-  });
-
-  globalShortcut.register(config.toggleMouseKey, toggleOverlayState);
-
-  globalShortcut.register(config.toggleShowKey, () => {
-    window.webContents.send("visibility-change", false);
-  });
+export function getWebPreferences(
+  dev: boolean,
+): Electron.WebPreferences {
+  return {
+    contextIsolation: true,
+    nodeIntegration: true,
+    spellcheck: false,
+    devTools: dev,
+    preload: path.join(import.meta.dirname, "../preload/main.mts"),
+  };
 }
 
-export function loadVite(window: BrowserWindow, port: string) {
-  window.loadURL(`http://localhost:${port}`).catch((e) => {
+export function loadVite(window: BrowserWindow, port: string, path?: string) {
+  window.loadURL(`http://localhost:${port}${path || ""}`).catch((e) => {
     console.log("Error loading URL, retrying", e);
     setTimeout(() => {
       loadVite(window, port);

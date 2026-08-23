@@ -4,6 +4,7 @@ import type {
   WebContents as BaseWebContents,
   IpcMainInvokeEvent,
 } from "electron";
+import type { Config } from "./config";
 
 /**
  * Channels the renderer may initiate with ipcRenderer.send(...)
@@ -13,6 +14,10 @@ export interface RendererSendChannels {
   "to-main": { args: [count: number]; return: never };
   hide: { args: []; return: never };
   show: { args: []; return: never };
+  "set-config": {
+    args: [config: Partial<Config>];
+    return: never;
+  };
 }
 
 /**
@@ -22,6 +27,10 @@ export interface RendererSendChannels {
 export interface RendererInvokeChannels {
   "get-user": { args: [id: number]; return: { id: number; name: string } };
   "list-recipes": { args: []; return: { recipes: string[] } };
+  "get-config": {
+    args: [];
+    return: Config;
+  };
 }
 
 /**
@@ -30,6 +39,8 @@ export interface RendererInvokeChannels {
  */
 export interface MainToRendererChannels {
   "from-main": [data: string];
+  "focus-change": [focussed: boolean];
+  "config-change": [config: Config];
 }
 
 /* Listener arg resolver for ipcMain.on */
