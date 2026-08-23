@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-require-imports */
 const windowStateManager = require('electron-window-state');
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, remote } = require('electron');
 const { default: contextMenu } = require('electron-context-menu');
 const { default: serve } = require('electron-serve');
 const path = require('path');
-const { electron } = require('process');
+const fs = require('node:fs/promises');
 /** @typedef {import('./electronIpc').IpcMain} IpcMain */
 /** @typedef {import('./electronIpc').WebContents} WebContents */
 
@@ -114,12 +114,22 @@ const webContents = () => mainWindow.webContents;
 ipc.on('to-main', (event, count) => {
 	event.reply('from-main', `next count is ${count + 1}`);
 });
-ipc.handle('get-user', (event, name) => {
-	return { id: 12, name: 'Christian' };
-});
 ipc.on('hide', (event) => {
 	mainWindow.hide();
 });
 ipc.on('show', (event) => {
 	mainWindow.show();
+});
+ipc.handle('get-user', (event, name) => {
+	return { id: 12, name: 'Christian' };
+});
+ipc.handle('list-recipes', async (event, recipeDirectory) => {
+	if (!(await fs.access(recipeDirectory))) {
+		return { recipeFilePaths: [] };
+	}
+	const files = await fs.readdir(recipeDirectory);
+	const recipeFilePaths = files.filter((x) => /recipe_.*\.json/.test(path.basename(x)));
+	return {
+		recipeFilePaths
+	};
 });

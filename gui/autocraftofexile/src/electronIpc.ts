@@ -16,6 +16,7 @@ export interface RendererSendChannels {
  */
 export interface RendererInvokeChannels {
 	'get-user': { args: [id: number]; return: { id: number; name: string } };
+	'list-recipes': { args: [recipeDirectory: string], return: { recipeFilePaths: string[] } }
 }
 
 /**
@@ -32,8 +33,8 @@ export type IpcMainListenerArgs<
 > = K extends keyof RendererSendChannels
 	? RendererSendChannels[K]
 	: K extends keyof RendererInvokeChannels
-		? RendererInvokeChannels[K]['args']
-		: never;
+	? RendererInvokeChannels[K]['args']
+	: never;
 
 export interface IpcMainEvent<
 	K extends keyof RendererSendChannels | keyof RendererInvokeChannels = keyof RendererSendChannels | keyof RendererInvokeChannels
