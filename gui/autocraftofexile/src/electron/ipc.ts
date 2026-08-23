@@ -27,10 +27,8 @@ export interface RendererSendChannels {
 export interface RendererInvokeChannels {
   "get-user": { args: [id: number]; return: { id: number; name: string } };
   "list-recipes": { args: []; return: { recipes: string[] } };
-  "get-config": {
-    args: [];
-    return: Config;
-  };
+  "get-config": { args: []; return: Config };
+  "has-focus": { args: []; return: boolean };
 }
 
 /**

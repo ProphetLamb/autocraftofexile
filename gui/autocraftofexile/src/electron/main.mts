@@ -104,8 +104,5 @@ registerIpc(ipcMain, {
   },
   interactivity() {
     return init.interativity;
-  },
-  webContents() {
-    return webContents as unknown as WebContents;
-  },
+  }
 });

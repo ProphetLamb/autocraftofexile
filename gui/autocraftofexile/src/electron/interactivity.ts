@@ -8,6 +8,7 @@ export interface MakeInteractiveParam {
   config: Store<Config>;
 }
 export interface MakeInteractiveResult {
+  get(): boolean;
   set(newValue: boolean): void;
   updateHotkey(): void;
 }
@@ -48,6 +49,9 @@ export function makeInteractive(
   updateHotkey();
 
   return {
+    get() {
+      return isInteractable;
+    },
     set,
     updateHotkey,
   };

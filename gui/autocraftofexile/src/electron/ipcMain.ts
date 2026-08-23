@@ -1,4 +1,4 @@
-import type { IpcMain as BaseIpcMain, BrowserWindow } from "electron";
+import { type IpcMain as BaseIpcMain, type BrowserWindow } from "electron";
 import type { WebContents, IpcMain } from "./ipc.ts";
 import type { MakeInteractiveResult } from "./interactivity.ts";
 import type Store from "electron-store";
@@ -14,11 +14,10 @@ export function registerIpc(
   options: {
     config: Store<Config>;
     window: () => BrowserWindow;
-    webContents: () => WebContents;
     interactivity: () => MakeInteractiveResult;
   },
 ) {
-  const { config, interactivity } = options;
+  const { config, interactivity, window } = options;
   const ipc = withTracing(ipcMain);
   ipc.on("to-main", (event, count) => {
     event.reply("from-main", `next count is ${count + 1}`);
@@ -40,6 +39,9 @@ export function registerIpc(
   ipc.handle("get-config", () => {
     return readConfig(config);
   });
+  ipc.handle('has-focus', () => {
+    return interactivity().get()
+  })
   ipc.on("set-config", (event, update) => {
     console.log("set-config", update);
     Object.entries(update).forEach(([key, value]) => {
@@ -48,6 +50,6 @@ export function registerIpc(
       }
     });
     interactivity().updateHotkey();
-    event.reply("config-change", readConfig(config));
+    window().webContents.send("config-change", readConfig(config));
   });
 }
