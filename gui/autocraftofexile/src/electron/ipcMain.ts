@@ -1,4 +1,8 @@
-import { type IpcMain as BaseIpcMain, type BrowserWindow } from "electron";
+import {
+  screen,
+  type IpcMain as BaseIpcMain,
+  type BrowserWindow,
+} from "electron";
 import type { WebContents, IpcMain } from "./ipc.ts";
 import type { MakeInteractiveResult } from "./interactivity.ts";
 import type Store from "electron-store";
@@ -39,11 +43,10 @@ export function registerIpc(
   ipc.handle("get-config", () => {
     return readConfig(config);
   });
-  ipc.handle('has-focus', () => {
-    return interactivity().get()
-  })
-  ipc.on("set-config", (event, update) => {
-    console.log("set-config", update);
+  ipc.handle("has-focus", () => {
+    return interactivity().get();
+  });
+  ipc.on("set-config", (_event, update) => {
     Object.entries(update).forEach(([key, value]) => {
       if (value !== undefined && Object.hasOwn(defaultConfig, key)) {
         config.set(key, value);
@@ -51,5 +54,10 @@ export function registerIpc(
     });
     interactivity().updateHotkey();
     window().webContents.send("config-change", readConfig(config));
+  });
+  ipc.handle("get-mouse-coords", () => {
+    const absolute = screen.getCursorScreenPoint();
+    const [x, y] = window().getPosition();
+    return { x: absolute.x - x, y: absolute.y - y };
   });
 }

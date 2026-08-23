@@ -29,6 +29,7 @@ export interface RendererInvokeChannels {
   "list-recipes": { args: []; return: { recipes: string[] } };
   "get-config": { args: []; return: Config };
   "has-focus": { args: []; return: boolean };
+  "get-mouse-coords": { args: []; return: { x: number; y: number } };
 }
 
 /**

@@ -1,11 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  nativeImage,
-  Tray,
-  webContents,
-} from "electron";
+import { app, BrowserWindow, ipcMain, nativeImage, Tray } from "electron";
 import contextMenu from "electron-context-menu";
 import serve from "electron-serve";
 import {
@@ -15,7 +8,6 @@ import {
   loadVite,
 } from "./windowMain.ts";
 import { registerIpc } from "./ipcMain.ts";
-import type { WebContents } from "./ipc.ts";
 import type { Config } from "./config.ts";
 import Store from "electron-store";
 
@@ -104,5 +96,5 @@ registerIpc(ipcMain, {
   },
   interactivity() {
     return init.interativity;
-  }
+  },
 });

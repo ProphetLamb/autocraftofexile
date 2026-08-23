@@ -4,7 +4,9 @@
   let toggleKey = $state("");
 
   function onsubmit() {
-    $settings = { ...$settings, config: { ...$settings.config, toggleKey } };
+    if (toggleKey) {
+      $settings.config.toggleKey = toggleKey;
+    }
     toggleKey = "";
   }
 

@@ -46,14 +46,12 @@ function createSettings(
   }
 
   window.electron.receive("focus-change", (isInteractive) => {
-    console.log("focus-change", isInteractive);
     updateInner((s) => {
       return { ...s, isInteractive };
     });
   });
 
   window.electron.receive("config-change", (config) => {
-    console.log("config-change", config);
     updateInner((s) => {
       return { ...s, config };
     });

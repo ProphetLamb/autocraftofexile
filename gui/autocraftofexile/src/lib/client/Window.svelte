@@ -75,7 +75,12 @@
   $effect(() => {
     if (wm.get(id)) {
       wm.update(id, props as Partial<WindowUpdate>);
-      wm.resize(id, props as Partial<Bounds>);
+      if (props?.x && props?.y) {
+        wm.move(id, props.x, props.y);
+      }
+      if (props?.width || props?.height) {
+        wm.resize(id, props as Partial<Bounds>);
+      }
     }
   });
   $effect.pre(() => {

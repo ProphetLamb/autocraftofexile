@@ -2,9 +2,8 @@
   import { dk, wm } from "$lib/client/windowing";
   import Window from "$lib/client/Window.svelte";
   import { onMount } from "svelte";
-  import type { WindowStage, WindowUpdate } from "@surdeddd/wmkit";
+  import type { Bounds, WindowStage, WindowUpdate } from "@surdeddd/wmkit";
   import { settings } from "$lib/client/settings";
-  import { updateMouseCoords } from "$lib/client/mouseTracker";
   import Settings from "$lib/client/Settings.svelte";
 
   let count = $state(0);
@@ -19,19 +18,43 @@
     minimizable: true,
     closable: false,
     resizable: false,
-  } as Partial<WindowUpdate>);
-  const hide = () => window.electron.send("hide");
-  window.addEventListener("keyup", (e) => {
-    if (e.key == "Escape" && !e.defaultPrevented && !e.altKey && !e.ctrlKey) {
-      hide();
-    }
-  });
+  } as Partial<WindowUpdate> & Partial<Bounds>);
 
-  onMount(async () => {
+  async function updateMainTitle() {
     const user = await window.electron.invoke("get-user", 12);
     if (user) {
       props.title = `Hello ${user.name}!`;
     }
+  }
+
+  function hide() {
+    $settings.isInteractive = false;
+  }
+
+  function keyupListener(e: KeyboardEvent) {
+    if (e.key == "Escape" && !e.defaultPrevented && !e.altKey && !e.ctrlKey) {
+      hide();
+    }
+  }
+
+  onMount(() => {
+    updateMainTitle();
+
+    window.electron.receive("focus-change", async (focussed) => {
+      if (focussed) {
+        const coords = await window.electron.invoke("get-mouse-coords");
+        if (coords) {
+          props.x = coords.x + 10;
+          props.y = coords.y - 30;
+        }
+      }
+    });
+
+    window.addEventListener("keyup", keyupListener);
+
+    return () => {
+      window.removeEventListener("keyup", keyupListener);
+    };
   });
 
   let settingsStage: WindowStage = $state("minimized");
@@ -39,7 +62,6 @@
 
 <div
   use:dk.desktop
-  use:updateMouseCoords
   class="relative h-screen overflow-hidden {$settings.isInteractive
     ? 'bg-surface-500/50'
     : 'hidden'}"
