@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, webContents } from "electron";
+import { app, BrowserWindow, ipcMain, nativeImage, Tray, webContents } from "electron";
 import contextMenu from "electron-context-menu";
 import serve from "electron-serve";
 import {
@@ -12,17 +12,35 @@ import type { WebContents } from "./ipc.ts";
 import type { Config } from "./config.ts";
 import Store from "electron-store";
 
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
+
 const config = new Store<Config>();
 const port = process.env.PORT || "5173";
 const dev = !app.isPackaged;
 let init: CreateWindowResult;
 let settings: BrowserWindow | undefined;
+let tray: Tray;
 
 contextMenu({
   showLookUpSelection: false,
   showSearchWithGoogle: false,
   showCopyImage: false,
 });
+
+function createTray() {
+  const icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACTSURBVHgBpZKBCYAgEEV/TeAIjuIIbdQIuUGt0CS1gW1iZ2jIVaTnhw+Cvs8/OYDJA4Y8kR3ZR2/kmazxJbpUEfQ/Dm/UG7wVwHkjlQdMFfDdJMFaACebnjJGyDWgcnZu1/lrCrl6NCoEHJBrDwEr5NrT6ko/UV8xdLAC2N49mlc5CylpYh8wCwqrvbBGLoKGvz8Bfq0QPWEUo/EAAAAASUVORK5CYII=')
+  tray = new Tray(icon);
+  tray.setToolTip("AutoCraftOfExile Settings");
+  tray.on("click", () => {
+    if (!settings) {
+      createSettingsWindow();
+    }
+    settings?.show();
+    settings?.focus();
+  });
+}
 
 function createSettingsWindow() {
   settings = new BrowserWindow({
@@ -39,6 +57,8 @@ function createSettingsWindow() {
 }
 
 function createMainWindow() {
+  createTray();
+
   if (!config.get("toggleKey", "")) {
     createSettingsWindow();
   }
