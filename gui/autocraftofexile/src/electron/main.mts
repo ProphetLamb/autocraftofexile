@@ -1,4 +1,11 @@
-import { app, BrowserWindow, ipcMain, nativeImage, Tray, webContents } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  nativeImage,
+  Tray,
+  webContents,
+} from "electron";
 import contextMenu from "electron-context-menu";
 import serve from "electron-serve";
 import {
@@ -30,19 +37,23 @@ contextMenu({
 });
 
 function createTray() {
-  const icon = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACTSURBVHgBpZKBCYAgEEV/TeAIjuIIbdQIuUGt0CS1gW1iZ2jIVaTnhw+Cvs8/OYDJA4Y8kR3ZR2/kmazxJbpUEfQ/Dm/UG7wVwHkjlQdMFfDdJMFaACebnjJGyDWgcnZu1/lrCrl6NCoEHJBrDwEr5NrT6ko/UV8xdLAC2N49mlc5CylpYh8wCwqrvbBGLoKGvz8Bfq0QPWEUo/EAAAAASUVORK5CYII=')
+  if (tray) {
+    return;
+  }
+  const icon = nativeImage.createFromDataURL(
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACTSURBVHgBpZKBCYAgEEV/TeAIjuIIbdQIuUGt0CS1gW1iZ2jIVaTnhw+Cvs8/OYDJA4Y8kR3ZR2/kmazxJbpUEfQ/Dm/UG7wVwHkjlQdMFfDdJMFaACebnjJGyDWgcnZu1/lrCrl6NCoEHJBrDwEr5NrT6ko/UV8xdLAC2N49mlc5CylpYh8wCwqrvbBGLoKGvz8Bfq0QPWEUo/EAAAAASUVORK5CYII=",
+  );
   tray = new Tray(icon);
   tray.setToolTip("AutoCraftOfExile Settings");
   tray.on("click", () => {
-    if (!settings) {
-      createSettingsWindow();
-    }
-    settings?.show();
-    settings?.focus();
+    createSettingsWindow().show();
   });
 }
 
 function createSettingsWindow() {
+  if (settings) {
+    return settings;
+  }
   settings = new BrowserWindow({
     resizable: false,
     width: 400,
@@ -54,9 +65,13 @@ function createSettingsWindow() {
   settings.on("close", () => (settings = undefined));
   if (dev) loadVite(settings, port, "/settings");
   else serve({ directory: "./settings" })(settings);
+  return settings;
 }
 
 function createMainWindow() {
+  if (init) {
+    return init;
+  }
   createTray();
 
   if (!config.get("toggleKey", "")) {
@@ -73,14 +88,11 @@ function createMainWindow() {
 
   if (dev) loadVite(init.window, port);
   else serve({ directory: "." })(init.window);
+  return init;
 }
 
 app.once("ready", createMainWindow);
-app.on("activate", () => {
-  if (!window) {
-    createMainWindow();
-  }
-});
+app.on("activate", createMainWindow);
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
