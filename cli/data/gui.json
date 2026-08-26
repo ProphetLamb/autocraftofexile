@@ -1,52 +1,146 @@
 {
-  "showcase": {
-    "x": 641,
-    "y": 825
-  },
-  "transmute": {
-    "x": 86,
-    "y": 546
-  },
-  "augment": {
-    "x": 452,
-    "y": 653
-  },
-  "alteration": {
-    "x": 217,
-    "y": 537
-  },
-  "regal": {
-    "x": 888,
-    "y": 555
-  },
-  "alchemy": {
-    "x": 962,
-    "y": 550
-  },
-  "chaos": {
-    "x": 1068,
-    "y": 544
-  },
-  "exalt": {
-    "x": 593,
-    "y": 551
-  },
-  "scour": {
-    "x": 874,
-    "y": 793
-  },
-  "annul": {
-    "x": 340,
-    "y": 540
-  },
-  "jeweller": {
-    "x": 226,
-    "y": 795
-  },
-  "fusing": {
-    "x": 316,
-    "y": 801
-  },
   "start_hotkey": "f9",
-  "stop_hotkey": "f10"
+  "stop_hotkey": "f10",
+  "tabs": [
+    {
+      "name": [
+        "currency",
+        "general"
+      ],
+      "tab_header": {
+        "x": 35,
+        "y": 270
+      },
+      "items": {
+        "scroll_of_wisdom": {
+          "x": 228,
+          "y": 432
+        },
+        "portal_scroll": {
+          "x": 344,
+          "y": 432
+        },
+        "blacksmiths_whetstone": {
+          "x": 741,
+          "y": 432
+        },
+        "armourers_scrap": {
+          "x": 855,
+          "y": 432
+        },
+        "glassblowers_bauble": {
+          "x": 970,
+          "y": 432
+        },
+        "gemcutters_prism": {
+          "x": 1083,
+          "y": 432
+        },
+        "cartographers_chisel": {
+          "x": 1197,
+          "y": 432
+        },
+        "orb_of_transmutation": {
+          "x": 114,
+          "y": 557
+        },
+        "orb_of_alteration": {
+          "x": 228,
+          "y": 557
+        },
+        "orb_of_annulment": {
+          "x": 344,
+          "y": 557
+        },
+        "orb_of_chance": {
+          "x": 460,
+          "y": 557
+        },
+        "exalted_orb": {
+          "x": 576,
+          "y": 557
+        },
+        "mirror_of_kalandra": {
+          "x": 741,
+          "y": 557
+        },
+        "regal_orb": {
+          "x": 855,
+          "y": 557
+        },
+        "orb_of_alchemy": {
+          "x": 970,
+          "y": 557
+        },
+        "chaos_orb": {
+          "x": 1083,
+          "y": 557
+        },
+        "orb_of_augmentation": {
+          "x": 460,
+          "y": 669
+        },
+        "divine_orb": {
+          "x": 1197,
+          "y": 669
+        },
+        "showcase": {
+          "x": 646,
+          "y": 916
+        },
+        "jewellers_orb": {
+          "x": 228,
+          "y": 797
+        },
+        "orb_of_fusing": {
+          "x": 344,
+          "y": 797
+        },
+        "chromatic_orb": {
+          "x": 460,
+          "y": 797
+        },
+        "enkindling_orb": {
+          "x": 114,
+          "y": 909
+        },
+        "ancient_orb": {
+          "x": 228,
+          "y": 909
+        },
+        "orb_of_binding": {
+          "x": 344,
+          "y": 909
+        },
+        "orb_of_regret": {
+          "x": 855,
+          "y": 909
+        },
+        "orb_of_unmaking": {
+          "x": 970,
+          "y": 909
+        },
+        "instilling_orb": {
+          "x": 114,
+          "y": 1021
+        },
+        "orb_of_scouring": {
+          "x": 855,
+          "y": 1021
+        },
+        "sacred_orb": {
+          "x": 970,
+          "y": 1021
+        },
+        "blessed_orb": {
+          "x": 1083,
+          "y": 1021
+        },
+        "vaal_orb": {
+          "x": 1197,
+          "y": 1021
+        }
+      }
+    }
+  ]
 }

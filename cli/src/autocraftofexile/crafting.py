@@ -48,82 +48,82 @@ class CurrencyMethodDefinition:
 CURRENCY_METHODS: tuple[CurrencyMethodDefinition, ...] = (
     CurrencyMethodDefinition(
         method=("currency", "transmute"),
-        coord_field="transmute",
+        coord_field="orb_of_transmutation",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "augmentation", "augmentation_normal"),
-        coord_field="augment",
+        coord_field="orb_of_augmentation",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "augmentation", None),
-        coord_field="augment",
+        coord_field="orb_of_augmentation",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "alteration"),
-        coord_field="alteration",
+        coord_field="orb_of_alteration",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "regal", "regal_normal"),
-        coord_field="regal",
+        coord_field="regal_orb",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "regal", None),
-        coord_field="regal",
+        coord_field="regal_orb",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "alchemy"),
-        coord_field="alchemy",
+        coord_field="orb_of_alchemy",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "chaos"),
-        coord_field="chaos",
+        coord_field="chaos_orb",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "exalted", "exalted_normal"),
-        coord_field="exalt",
+        coord_field="exalted_orb",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "exalted", None),
-        coord_field="exalt",
+        coord_field="exalted_orb",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "scour"),
-        coord_field="scour",
+        coord_field="orb_of_scouring",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "annul"),
-        coord_field="annul",
+        coord_field="orb_of_annulment",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "fusing", "fusing_normal"),
-        coord_field="fusing",
+        coord_field="orb_of_fusing",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "fusing", None),
-        coord_field="fusing",
+        coord_field="orb_of_fusing",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "jeweller", "jeweller_normal"),
-        coord_field="jeweller",
+        coord_field="jewellers_orb",
         tab=("currency", "general"),
     ),
     CurrencyMethodDefinition(
         method=("currency", "jeweller", None),
-        coord_field="jeweller",
+        coord_field="jewellers_orb",
         tab=("currency", "general"),
     ),
 )
@@ -216,7 +216,7 @@ def _get_currency_coordinates(
     if definition is None:
         raise ValueError(f"Unsupported currency method: {method!r}")
 
-    coordinate = getattr(config, definition.coord_field, None)
+    coordinate = config.tabs[definition.tab][definition.coord_field]
     if coordinate is None:
         raise ValueError(
             f"GuiConfig has no {definition.coord_field!r} coordinate "

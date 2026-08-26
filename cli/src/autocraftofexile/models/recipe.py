@@ -134,7 +134,7 @@ class RecipeSettings:
         return cls(
             bgroup=data.get("bgroup") or 0,
             base=data.get("base") or "",
-            bitem=data.get("bitem") or "",
+            bitem=str(data.get("bitem") or ""),
             ilvl=data.get("ilvl") or 0,
             rarity=data.get("rarity") or "Normal",
             influences=tuple(data.get("influences") or []),
