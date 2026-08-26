@@ -213,6 +213,7 @@ class ShowcaseCrafter(Crafter):
             self.options.rich_recipe.status[self._current_step] = StepStatus(
                 active=True,
             )
+            self.options.rich_recipe.update()
         else:
             self.options.rich_recipe.update(
                 append=":sparkles: [green]Done[/green]" if done else None

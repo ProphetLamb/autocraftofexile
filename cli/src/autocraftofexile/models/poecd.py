@@ -86,25 +86,6 @@ class BItem:
 
 
 @dataclass(slots=True, frozen=True)
-class BItems:
-    values: SparseArray[BItem]
-    name: Mapping[str, int]
-
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        return cls(
-            values=SparseArray[BItem].from_dict(data, BItem.from_dict),
-            name=MappingProxyType(data["name"]),
-        )
-
-    def __getitem__(self, key: str) -> BItem:
-        return self.values[key]
-
-    def by_name(self, name: str) -> BItem:
-        return self.values.seq[self.name[name]]
-
-
-@dataclass(slots=True, frozen=True)
 class Base:
     id_bgroup: str
     id_base: str
@@ -312,7 +293,7 @@ class Tiers:
 
 @dataclass(slots=True, frozen=True)
 class PoeCd:
-    bitems: BItems
+    bitems: SparseArray[BItem]
     bases: Bases
     bgroups: SparseArray[BGroup]
     modifiers: SparseArray[Modifier]
@@ -324,7 +305,9 @@ class PoeCd:
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> Self:
         return cls(
-            bitems=BItems.from_dict(data.get("bitems") or {}),
+            bitems=SparseArray[BItem].from_dict(
+                data.get("bitems") or {}, BItem.from_dict
+            ),
             bases=Bases.from_dict(data.get("bases") or {}),
             bgroups=SparseArray[BGroup].from_dict(
                 data.get("bgroups") or {}, BGroup.from_dict

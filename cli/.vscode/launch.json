@@ -11,7 +11,7 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "preLaunchTask": "uv: sync",
-            "args": []
+            "args": ["--recipe", ".\\data\\recipe_life_stacker_jews.json"]
         }
     ]
 }

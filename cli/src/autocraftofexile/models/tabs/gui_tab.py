@@ -21,6 +21,9 @@ class GuiTab(ABC):
     tab_header: Coordinates | None = field(default=None)
     items: dict[str, Coordinates] = field(default_factory=dict[str, Coordinates])
 
+    def __getitem__(self, key: str):
+        return self.items[key]
+
     @classmethod
     @abstractmethod
     def name(cls) -> tuple[str, ...]:
