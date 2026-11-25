@@ -1,377 +1,455 @@
 {
   "template_size": [
-    643,
-    643
+    1172,
+    867
   ],
   "title": "Select the General currency tab",
   "instructions": "Align the generated mask with the General currency tab. Drag inside to move, drag a handle to resize. Press ENTER to confirm, ESCAPE to cancel.",
   "items": [
     {
-      "name": "",
+      "name": "placeholder1",
       "center": [
-        0.0762,
-        0.1244
+        0.053754,
+        0.171857
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
       "name": "scroll_of_wisdom",
-      "label": "portal",
       "center": [
-        0.1664,
-        0.1244
+        0.151877,
+        0.17301
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
       "name": "portal_scroll",
       "center": [
-        0.25815,
-        0.1244
+        0.25,
+        0.171857
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
-      "name": "blacksmiths_whetstone",
+      "name": "hinekora_lock",
       "center": [
-        0.5723,
-        0.1244
-      ]
-    },
-    {
-      "name": "armourers_scrap",
-      "center": [
-        0.6625,
-        0.1244
-      ]
-    },
-    {
-      "name": "glassblowers_bauble",
-      "center": [
-        0.7529,
-        0.1244
-      ]
-    },
-    {
-      "name": "gemcutters_prism",
-      "center": [
-        0.8429,
-        0.1244
-      ]
-    },
-    {
-      "name": "cartographers_chisel",
-      "center": [
-        0.9331,
-        0.1244
-      ]
-    },
-    {
-      "name": "orb_of_transmutation",
-      "center": [
-        0.0762,
-        0.2255
-      ]
-    },
-    {
-      "name": "orb_of_alteration",
-      "center": [
-        0.1664,
-        0.2255
-      ]
-    },
-    {
-      "name": "orb_of_annulment",
-      "center": [
-        0.25815,
-        0.2255
-      ]
-    },
-    {
-      "name": "orb_of_chance",
-      "center": [
-        0.3499,
-        0.2255
-      ]
-    },
-    {
-      "name": "exalted_orb",
-      "center": [
-        0.4417,
-        0.2255
+        0.425768,
+        0.198385
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
       "name": "mirror_of_kalandra",
       "center": [
-        0.5723,
-        0.2255
+        0.523891,
+        0.198385
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
-      "name": "regal_orb",
+      "name": "blacksmiths_whetstone",
       "center": [
-        0.6625,
-        0.2255
+        0.654437,
+        0.17301
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
-      "name": "orb_of_alchemy",
+      "name": "armourers_scrap",
       "center": [
-        0.7529,
-        0.2255
+        0.751706,
+        0.171857
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
-      "name": "chaos_orb",
+      "name": "glassblowers_bauble",
       "center": [
-        0.8429,
-        0.2255
+        0.848976,
+        0.171857
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
-      "name": "",
+      "name": "gemcutters_prism",
       "center": [
-        0.0762,
-        0.3157
+        0.947099,
+        0.171857
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
-      "name": "",
+      "name": "orb_of_transmutation",
       "center": [
-        0.1664,
-        0.3157
+        0.053754,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
-      "name": "",
+      "name": "orb_of_alteration",
       "center": [
-        0.25815,
-        0.3157
+        0.151877,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
       "name": "orb_of_augmentation",
       "center": [
-        0.3499,
-        0.3157
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.4417,
-        0.3157
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.5723,
-        0.3157
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.6625,
-        0.3157
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.7529,
-        0.3157
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.8429,
-        0.3157
+        0.25,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
       "name": "divine_orb",
       "center": [
-        0.9331,
-        0.3157
+        0.425768,
+        0.331027
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "mirror_shard",
+      "center": [
+        0.523891,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "orb_of_alchemy",
+      "center": [
+        0.654437,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "chaos_orb",
+      "center": [
+        0.751706,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "blessed_orb",
+      "center": [
+        0.848976,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "sacred_orb",
+      "center": [
+        0.947099,
+        0.32872
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "placeholder2",
+      "center": [
+        0.053754,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "placeholder3",
+      "center": [
+        0.151877,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "regal_orb",
+      "center": [
+        0.25,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "orb_of_annulment",
+      "center": [
+        0.425768,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "exalted_orb",
+      "center": [
+        0.523891,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "placeholder4",
+      "center": [
+        0.654437,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "jewellers_orb",
+      "center": [
+        0.751706,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "orb_of_fusing",
+      "center": [
+        0.848976,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "chromatic_orb",
+      "center": [
+        0.947099,
+        0.462514
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "fracturing_orb",
+      "center": [
+        0.053754,
+        0.620531
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "instilling_orb",
+      "center": [
+        0.151877,
+        0.620531
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "enkindling_orb",
+      "center": [
+        0.25,
+        0.620531
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "orb_of_scouring",
+      "center": [
+        0.697099,
+        0.621684
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "orb_of_regret",
+      "center": [
+        0.794369,
+        0.619377
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "orb_of_unmaking",
+      "center": [
+        0.891638,
+        0.620531
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "fracturing_shard",
+      "center": [
+        0.053754,
+        0.750865
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "ancient_orb",
+      "center": [
+        0.151877,
+        0.750865
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "orb_of_chance",
+      "center": [
+        0.25,
+        0.750865
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "stacked_deck",
+      "center": [
+        0.697099,
+        0.753172
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "vaal_orb",
+      "center": [
+        0.794369,
+        0.753172
+      ],
+      "size": [
+        0.083618,
+        0.106113
+      ]
+    },
+    {
+      "name": "mist",
+      "center": [
+        0.891638,
+        0.753172
+      ],
+      "size": [
+        0.083618,
+        0.106113
       ]
     },
     {
       "name": "showcase",
       "center": [
-        0.4969,
-        0.51555
+        0.477389,
+        0.756632
       ],
       "size": [
-        0.1416,
-        0.2783
+        0.164676,
+        0.419839
       ],
       "style": {
         "fill": "#11131d",
         "outline": "#8ce9ef",
         "stroke": 2
       }
-    },
-    {
-      "name": "jewellers_orb",
-      "center": [
-        0.1664,
-        0.4199
-      ]
-    },
-    {
-      "name": "orb_of_fusing",
-      "center": [
-        0.25815,
-        0.4199
-      ]
-    },
-    {
-      "name": "chromatic_orb",
-      "center": [
-        0.3499,
-        0.4199
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.6625,
-        0.4199
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.7529,
-        0.4199
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.8429,
-        0.4199
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.9331,
-        0.4199
-      ]
-    },
-    {
-      "name": "enkindling_orb",
-      "center": [
-        0.0762,
-        0.5101
-      ]
-    },
-    {
-      "name": "ancient_orb",
-      "center": [
-        0.1664,
-        0.5101
-      ]
-    },
-    {
-      "name": "orb_of_binding",
-      "center": [
-        0.25815,
-        0.5101
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.3499,
-        0.5101
-      ]
-    },
-    {
-      "name": "orb_of_regret",
-      "center": [
-        0.6625,
-        0.5101
-      ]
-    },
-    {
-      "name": "orb_of_unmaking",
-      "center": [
-        0.7529,
-        0.5101
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.8429,
-        0.5101
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.9331,
-        0.5101
-      ]
-    },
-    {
-      "name": "instilling_orb",
-      "center": [
-        0.0762,
-        0.6003
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.1664,
-        0.6003
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.25815,
-        0.6003
-      ]
-    },
-    {
-      "name": "",
-      "center": [
-        0.3499,
-        0.6003
-      ]
-    },
-    {
-      "name": "orb_of_scouring",
-      "center": [
-        0.6625,
-        0.6003
-      ]
-    },
-    {
-      "name": "sacred_orb",
-      "center": [
-        0.7529,
-        0.6003
-      ]
-    },
-    {
-      "name": "blessed_orb",
-      "center": [
-        0.8429,
-        0.6003
-      ]
-    },
-    {
-      "name": "vaal_orb",
-      "center": [
-        0.9331,
-        0.6003
-      ]
     }
   ]
 }

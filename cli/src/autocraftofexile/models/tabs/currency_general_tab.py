@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import ClassVar
 
+from ..coordinates import Coordinates
 from .gui_tab import GuiTab
 from .tab_overlay_selector import TabOverlaySelector
 
@@ -13,8 +14,12 @@ class CurrencyGeneralTab(GuiTab):
     """The General subtab of the currency stash tab."""
 
     NAME: ClassVar[tuple[str, ...]] = ("currency", "general")
-    OVERLAY_DEFINITION_PACKAGE: ClassVar[str] = "autocraftofexile.models.tabs"
-    OVERLAY_DEFINITION_RESOURCE: ClassVar[str] = "currency_general_tab.json"
+    OVERLAY_DEFINITION_PACKAGE: ClassVar[str] = (
+        "autocraftofexile.models.tabs"
+    )
+    OVERLAY_DEFINITION_RESOURCE: ClassVar[str] = (
+        "currency_general_tab.json"
+    )
 
     @classmethod
     def name(cls) -> tuple[str, ...]:
@@ -29,141 +34,161 @@ class CurrencyGeneralTab(GuiTab):
 
     @property
     def missing_items(self) -> Iterable[str]:
+        """Configured currency entries that are currently missing.
+
+        Visual placeholders are alignment aids and are not configuration
+        requirements.
+        """
         required = self.selector().definition.items
         return [
             item.name
             for item in required
-            if item.name and not (item.name in self.items)
+            if not item.is_placeholder and item.name not in self.items
         ]
 
-    @property
-    def scroll_of_wisdom(self):
-        return self.items["scroll_of_wisdom"]
+    def _item(self, name: str) -> Coordinates:
+        return self.items[name]
 
     @property
-    def portal_scroll(self):
-        return self.items["portal_scroll"]
+    def scroll_of_wisdom(self) -> Coordinates:
+        return self._item("scroll_of_wisdom")
 
     @property
-    def blacksmiths_whetstone(self):
-        return self.items["blacksmiths_whetstone"]
+    def portal_scroll(self) -> Coordinates:
+        return self._item("portal_scroll")
 
     @property
-    def armourers_scrap(self):
-        return self.items["armourers_scrap"]
+    def hinekora_lock(self) -> Coordinates:
+        return self._item("hinekora_lock")
 
     @property
-    def glassblowers_bauble(self):
-        return self.items["glassblowers_bauble"]
+    def mirror_of_kalandra(self) -> Coordinates:
+        return self._item("mirror_of_kalandra")
 
     @property
-    def gemcutters_prism(self):
-        return self.items["gemcutters_prism"]
+    def blacksmiths_whetstone(self) -> Coordinates:
+        return self._item("blacksmiths_whetstone")
 
     @property
-    def cartographers_chisel(self):
-        return self.items["cartographers_chisel"]
+    def armourers_scrap(self) -> Coordinates:
+        return self._item("armourers_scrap")
 
     @property
-    def orb_of_transmutation(self):
-        return self.items["orb_of_transmutation"]
+    def glassblowers_bauble(self) -> Coordinates:
+        return self._item("glassblowers_bauble")
 
     @property
-    def orb_of_alteration(self):
-        return self.items["orb_of_alteration"]
+    def gemcutters_prism(self) -> Coordinates:
+        return self._item("gemcutters_prism")
 
     @property
-    def orb_of_annulment(self):
-        return self.items["orb_of_annulment"]
+    def orb_of_transmutation(self) -> Coordinates:
+        return self._item("orb_of_transmutation")
 
     @property
-    def orb_of_chance(self):
-        return self.items["orb_of_chance"]
+    def orb_of_alteration(self) -> Coordinates:
+        return self._item("orb_of_alteration")
 
     @property
-    def exalted_orb(self):
-        return self.items["exalted_orb"]
+    def orb_of_augmentation(self) -> Coordinates:
+        return self._item("orb_of_augmentation")
 
     @property
-    def mirror_of_kalandra(self):
-        return self.items["mirror_of_kalandra"]
+    def divine_orb(self) -> Coordinates:
+        return self._item("divine_orb")
 
     @property
-    def regal_orb(self):
-        return self.items["regal_orb"]
+    def mirror_shard(self) -> Coordinates:
+        return self._item("mirror_shard")
 
     @property
-    def orb_of_alchemy(self):
-        return self.items["orb_of_alchemy"]
+    def orb_of_alchemy(self) -> Coordinates:
+        return self._item("orb_of_alchemy")
 
     @property
-    def chaos_orb(self):
-        return self.items["chaos_orb"]
+    def chaos_orb(self) -> Coordinates:
+        return self._item("chaos_orb")
 
     @property
-    def veiled_chaos_orb(self):
-        return self.items["veiled_chaos_orb"]
+    def blessed_orb(self) -> Coordinates:
+        return self._item("blessed_orb")
 
     @property
-    def orb_of_augmentation(self):
-        return self.items["orb_of_augmentation"]
+    def sacred_orb(self) -> Coordinates:
+        return self._item("sacred_orb")
 
     @property
-    def divine_orb(self):
-        return self.items["divine_orb"]
+    def regal_orb(self) -> Coordinates:
+        return self._item("regal_orb")
 
     @property
-    def jewellers_orb(self):
-        return self.items["jewellers_orb"]
+    def orb_of_annulment(self) -> Coordinates:
+        return self._item("orb_of_annulment")
 
     @property
-    def orb_of_fusing(self):
-        return self.items["orb_of_fusing"]
+    def exalted_orb(self) -> Coordinates:
+        return self._item("exalted_orb")
 
     @property
-    def chromatic_orb(self):
-        return self.items["chromatic_orb"]
+    def jewellers_orb(self) -> Coordinates:
+        return self._item("jewellers_orb")
 
     @property
-    def enkindling_orb(self):
-        return self.items["enkindling_orb"]
+    def orb_of_fusing(self) -> Coordinates:
+        return self._item("orb_of_fusing")
 
     @property
-    def ancient_orb(self):
-        return self.items["ancient_orb"]
+    def chromatic_orb(self) -> Coordinates:
+        return self._item("chromatic_orb")
 
     @property
-    def orb_of_binding(self):
-        return self.items["orb_of_binding"]
+    def fracturing_orb(self) -> Coordinates:
+        return self._item("fracturing_orb")
 
     @property
-    def orb_of_regret(self):
-        return self.items["orb_of_regret"]
+    def instilling_orb(self) -> Coordinates:
+        return self._item("instilling_orb")
 
     @property
-    def orb_of_unmaking(self):
-        return self.items["orb_of_unmaking"]
+    def enkindling_orb(self) -> Coordinates:
+        return self._item("enkindling_orb")
 
     @property
-    def instilling_orb(self):
-        return self.items["instilling_orb"]
+    def orb_of_scouring(self) -> Coordinates:
+        return self._item("orb_of_scouring")
 
     @property
-    def orb_of_scouring(self):
-        return self.items["orb_of_scouring"]
+    def orb_of_regret(self) -> Coordinates:
+        return self._item("orb_of_regret")
 
     @property
-    def sacred_orb(self):
-        return self.items["sacred_orb"]
+    def orb_of_unmaking(self) -> Coordinates:
+        return self._item("orb_of_unmaking")
 
     @property
-    def blessed_orb(self):
-        return self.items["blessed_orb"]
+    def fracturing_shard(self) -> Coordinates:
+        return self._item("fracturing_shard")
 
     @property
-    def vaal_orb(self):
-        return self.items["vaal_orb"]
+    def ancient_orb(self) -> Coordinates:
+        return self._item("ancient_orb")
 
     @property
-    def showcase(self):
-        return self.items["showcase"]
+    def orb_of_chance(self) -> Coordinates:
+        return self._item("orb_of_chance")
+
+    @property
+    def stacked_deck(self) -> Coordinates:
+        return self._item("stacked_deck")
+
+    @property
+    def vaal_orb(self) -> Coordinates:
+        return self._item("vaal_orb")
+
+    @property
+    def mist(self) -> Coordinates:
+        return self._item("mist")
+
+    @property
+    def showcase(self) -> Coordinates:
+        return self._item("showcase")
