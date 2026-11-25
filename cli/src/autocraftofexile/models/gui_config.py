@@ -10,6 +10,7 @@ import keyboard
 from rich import print
 
 from .tabs.currency_general_tab import CurrencyGeneralTab
+from .tabs.currency_atlas_tab import CurrencyAtlasTab
 from .tabs.gui_tab import GuiTab
 
 _logger = logging.getLogger(__name__)
@@ -27,10 +28,11 @@ def prompt_hotkey(name: str) -> str:
 
 class WellknownTabs:
     currency_general = ("currency", "general")
-    currency_exotic = ("currency", "exotic")
+    currency_atlas = ("currency", "atlas")
 
     tab_types: Mapping[tuple[str, ...], type[GuiTab]] = {
-        currency_general: CurrencyGeneralTab
+        currency_general: CurrencyGeneralTab,
+        currency_atlas: CurrencyAtlasTab,
     }
 
 
@@ -51,6 +53,10 @@ class GuiConfig:
     @property
     def currency_general(self) -> CurrencyGeneralTab:
         return self.tabs[WellknownTabs.currency_general]  # pyright: ignore[reportReturnType]
+
+    @property
+    def currency_atlas(self) -> CurrencyGeneralTab:
+        return self.tabs[WellknownTabs.currency_atlas]  # pyright: ignore[reportReturnType]
 
     def to_dict(self) -> dict[str, Any]:
         return {

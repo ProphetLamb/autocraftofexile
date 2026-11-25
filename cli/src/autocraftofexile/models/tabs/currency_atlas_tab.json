@@ -1,0 +1,499 @@
+{
+  "template_size": [
+    1241,
+    891
+  ],
+  "title": "Select the Atlas currency tab",
+  "instructions": "Align the generated mask with the Atlas currency tab. Drag inside to move, drag a handle to resize. Press ENTER to confirm, ESCAPE to cancel.",
+  "items": [
+    {
+      "name": "wild_lifeforce",
+      "center": [
+        0.075745,
+        0.16835
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "vivid_lifeforce",
+      "center": [
+        0.177276,
+        0.16835
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "primal_lifeforce",
+      "center": [
+        0.278002,
+        0.16835
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "orb_of_remembrance",
+      "center": [
+        0.075745,
+        0.296296
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "orb_of_intention",
+      "center": [
+        0.177276,
+        0.296296
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "sacred_lifeforce",
+      "center": [
+        0.278002,
+        0.296296
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "mavens_chisel_of_procurement",
+      "center": [
+        0.444803,
+        0.166105
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "mavens_chisel_of_proliferation",
+      "center": [
+        0.538276,
+        0.167228
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "mavens_chisel_of_threads",
+      "center": [
+        0.444803,
+        0.295174
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "mavens_chisel_of_divination",
+      "center": [
+        0.538276,
+        0.296296
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "divine_vessel",
+      "center": [
+        0.444803,
+        0.425365
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "mavens_chisel_of_avarice",
+      "center": [
+        0.538276,
+        0.425365
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "hunters_exalted_orb",
+      "center": [
+        0.7083,
+        0.167228
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "crusaders_exalted_orb",
+      "center": [
+        0.800161,
+        0.167228
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "shapers_exalted_orb",
+      "center": [
+        0.892023,
+        0.167228
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "redeemers_exalted_orb",
+      "center": [
+        0.7083,
+        0.296296
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "warlords_exalted_orb",
+      "center": [
+        0.800161,
+        0.296296
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "elders_exalted_orb",
+      "center": [
+        0.892023,
+        0.296296
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "orb_of_dominance",
+      "center": [
+        0.753425,
+        0.429854
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "awakeners_orb",
+      "center": [
+        0.84448,
+        0.429854
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "orb_of_unravelling",
+      "center": [
+        0.962933,
+        0.452301
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder1",
+      "center": [
+        0.049154,
+        0.553311
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder2",
+      "center": [
+        0.141015,
+        0.553311
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder3",
+      "center": [
+        0.233683,
+        0.553311
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder4",
+      "center": [
+        0.32635,
+        0.553311
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "eldritch_chaos_orb",
+      "center": [
+        0.661563,
+        0.553311
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "eldritch_exalted_orb",
+      "center": [
+        0.753425,
+        0.552189
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "eldritch_orb_of_annulment",
+      "center": [
+        0.845286,
+        0.552189
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "orb_of_conflict",
+      "center": [
+        0.937953,
+        0.553311
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder5",
+      "center": [
+        0.049154,
+        0.682379
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder6",
+      "center": [
+        0.141015,
+        0.682379
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder7",
+      "center": [
+        0.233683,
+        0.682379
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder8",
+      "center": [
+        0.32635,
+        0.682379
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "lesser_eldritch_ember",
+      "center": [
+        0.661563,
+        0.682379
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "greater_eldritch_ember",
+      "center": [
+        0.753425,
+        0.682379
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "grand_eldritch_ember",
+      "center": [
+        0.845286,
+        0.682379
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "exceptional_eldritch_ember",
+      "center": [
+        0.937953,
+        0.681257
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder9",
+      "center": [
+        0.141015,
+        0.811448
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "placeholder10",
+      "center": [
+        0.233683,
+        0.811448
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "lesser_eldritch_ichor",
+      "center": [
+        0.661563,
+        0.811448
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "greater_eldritch_ichor",
+      "center": [
+        0.753425,
+        0.811448
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "grand_eldritch_ichor",
+      "center": [
+        0.845286,
+        0.810325
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "exceptional_eldritch_ichor",
+      "center": [
+        0.937953,
+        0.811448
+      ],
+      "size": [
+        0.078969,
+        0.103255
+      ]
+    },
+    {
+      "name": "showcase",
+      "center": [
+        0.497583,
+        0.732323
+      ],
+      "size": [
+        0.161966,
+        0.411897
+      ],
+      "style": {
+        "fill": "#11131d",
+        "outline": "#8ce9ef",
+        "stroke": 2
+      }
+    }
+  ]
+}
