@@ -66,8 +66,29 @@ def attacks_per_second(value: str | None) -> float:
     return 0.0 if match is None else float(match.group())
 
 
+_DISPLAY_ANNOTATION_RE = re.compile(
+    r"""
+    \s*
+    (?:-|–|—)
+    \s*
+    (?:
+        unscalable \s+ value
+        |
+        local
+        |
+        global
+    )
+    \s*$
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
 def normalize_modifier_text(value: str) -> str:
-    return " ".join(value.replace("\u2013", "-").replace("\u2014", "-").split())
+    value = value.replace("–", "-").replace("—", "-")
+    value = _DISPLAY_ANNOTATION_RE.sub("", value)
+
+    return " ".join(value.split())
 
 
 def modifier_template_pattern(template: str) -> re.Pattern[str]:
