@@ -137,6 +137,12 @@ def _configure_atlas_from_general(config: GuiConfig) -> bool:
 
     Returns ``True`` only when the Atlas configuration was added or changed.
     """
+    atlas_tab = config.tabs.get(WellknownTabs.currency_atlas)
+    if atlas_tab and not isinstance(atlas_tab, CurrencyAtlasTab):
+        raise TypeError(f"Expected CurrencyAtlasTab, got {type(atlas_tab).__name__}")
+    if atlas_tab:
+        return False
+
     general_tab = config.tabs.get(WellknownTabs.currency_general)
     if general_tab is None:
         return False
