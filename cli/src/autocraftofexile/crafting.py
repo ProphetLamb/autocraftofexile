@@ -18,7 +18,6 @@ from .models.coordinates import Coordinates
 from .models.gui_config import GuiConfig
 from .models.poecd import PoeCd
 from .models.recipe import Recipe
-from .models.tabs.gui_tab import GuiTab
 from .rich_recipe import RichRecipe
 
 _logger = logging.getLogger(__name__)
@@ -217,7 +216,7 @@ class CrafterMethodCurrency(CrafterMethodDragCurrency):
         self.method = _normalize_method(definition.method)
 
     def acquire(self, poe: PoeController) -> None:
-        coords = poe.get_currency_coordinates(self.method, poe.options.config)
+        coords = poe.get_currency_coordinates(self.method)
         poe.move_to(StashLocation(self.definition.tab, coords))
         poe.right_click()
         poe.move_to_crafting_target()
@@ -243,7 +242,11 @@ class PoeController:
     current_loc: StashLocation | None = field(default=None)
     crafting_target_loc: StashLocation | None = field(default=None)
     dragged_currency: tuple[str | None, ...] | None = field(default=None)
-    open_tab: tuple[str, ...] | None = field(default=None)
+
+    def reset(self):
+        self.current_loc = None
+        self.crafting_target_loc = None
+        self.dragged_currency = None
 
     def duration(self, duration: float) -> float:
         return random.uniform(duration * 0.85, duration * 1.15)
@@ -261,10 +264,16 @@ class PoeController:
         if self.current_loc == loc:
             return
         if self.current_loc and self.current_loc.tab != loc.tab:
-            pass
+            target_tab = self.options.config.tabs[loc.tab]
+            if not target_tab.tab_header:
+                raise ValueError(
+                    f"Unable to move to tab {loc.tab!r}: missing tab header"
+                )
+            self._move_to_point(target_tab.tab_header)
+            self.left_click()
 
-        self.current_loc = loc
         self._move_to_point(loc.coords)
+        self.current_loc = loc
 
     def _move_to_point(self, coords: Coordinates):
         weight = random.uniform(4, 6)
@@ -303,32 +312,15 @@ class PoeController:
         pyautogui.keyUp(key)
         time.sleep(self.duration(1 / self.options.speed))
 
-    def _ensure_tab_open(self, tab: GuiTab) -> None:
-        tab_name = tab.name()
-        if self.open_tab == tab_name:
-            return
-
-        if tab.tab_header is None:
-            raise ValueError(f"Tab {tab_name!r} has no detected tab-header coordinate")
-
-        self.move_to(tab.tab_header)
-        self.left_click()
-        self.open_tab = tab_name
-
-    def get_currency_coordinates(
-        self,
-        method: tuple[str | None, ...],
-        config: GuiConfig,
-    ) -> Coordinates:
+    def get_currency_coordinates(self, method: tuple[str | None, ...]) -> Coordinates:
         definition = CURRENCY_METHOD_BY_SIGNATURE.get(method)
 
         if definition is None:
             raise ValueError(f"Unsupported currency method: {method!r}")
 
-        tab = config.tabs[definition.tab]
+        tab = self.options.config.tabs[definition.tab]
         if not tab:
             raise ValueError(f"Unable to find tab {definition.tab!r}")
-        self._ensure_tab_open(tab)
         coordinate = tab[definition.coord_field]
         if coordinate is None:
             raise ValueError(
@@ -350,7 +342,6 @@ class Crafter(ABC):
         self.options = options
         self.poe = PoeController(options, stopping_token)
         self.poe.dragged_currency = None
-        self.open_tab = None
 
     def __enter__(self) -> None:
         pass
@@ -363,8 +354,7 @@ class Crafter(ABC):
     ) -> None:
         del exception_type, exception_value, exception_traceback
         if self.poe.dragged_currency:
-            self.poe.dragged_currency = None
-            self.poe.open_tab = None
+            self.poe.reset()
             pyautogui.keyUp("shift")
 
     @abstractmethod
