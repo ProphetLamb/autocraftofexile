@@ -18,6 +18,7 @@ from .models.coordinates import Coordinates
 from .models.gui_config import GuiConfig
 from .models.poecd import PoeCd
 from .models.recipe import Recipe
+from .models.tabs.gui_tab import GuiTab
 from .rich_recipe import RichRecipe
 
 _logger = logging.getLogger(__name__)
@@ -207,25 +208,6 @@ def find_crafter_method(methods: Iterable[CrafterMethod], method: Iterable[str |
     )
 
 
-def _get_currency_coordinates(
-    method: tuple[str | None, ...],
-    config: GuiConfig,
-) -> Coordinates:
-    definition = CURRENCY_METHOD_BY_SIGNATURE.get(method)
-
-    if definition is None:
-        raise ValueError(f"Unsupported currency method: {method!r}")
-
-    coordinate = config.tabs[definition.tab][definition.coord_field]
-    if coordinate is None:
-        raise ValueError(
-            f"GuiConfig has no {definition.coord_field!r} coordinate "
-            f"for method {method!r}"
-        )
-
-    return coordinate
-
-
 class CrafterMethodCurrency(CrafterMethodDragCurrency):
     definition: CurrencyMethodDefinition
 
@@ -235,7 +217,7 @@ class CrafterMethodCurrency(CrafterMethodDragCurrency):
         self.method = _normalize_method(definition.method)
 
     def acquire(self, poe: PoeController) -> None:
-        coords = _get_currency_coordinates(self.method, poe.options.config)
+        coords = poe.get_currency_coordinates(self.method, poe.options.config)
         poe.move_to(StashLocation(self.definition.tab, coords))
         poe.right_click()
         poe.move_to_crafting_target()
@@ -261,6 +243,7 @@ class PoeController:
     current_loc: StashLocation | None = field(default=None)
     crafting_target_loc: StashLocation | None = field(default=None)
     dragged_currency: tuple[str | None, ...] | None = field(default=None)
+    open_tab: tuple[str, ...] | None = field(default=None)
 
     def duration(self, duration: float) -> float:
         return random.uniform(duration * 0.85, duration * 1.15)
@@ -320,12 +303,46 @@ class PoeController:
         pyautogui.keyUp(key)
         time.sleep(self.duration(1 / self.options.speed))
 
+    def _ensure_tab_open(self, tab: GuiTab) -> None:
+        tab_name = tab.name()
+        if self.open_tab == tab_name:
+            return
+
+        if tab.tab_header is None:
+            raise ValueError(f"Tab {tab_name!r} has no detected tab-header coordinate")
+
+        self.move_to(tab.tab_header)
+        self.left_click()
+        self.open_tab = tab_name
+
+    def get_currency_coordinates(
+        self,
+        method: tuple[str | None, ...],
+        config: GuiConfig,
+    ) -> Coordinates:
+        definition = CURRENCY_METHOD_BY_SIGNATURE.get(method)
+
+        if definition is None:
+            raise ValueError(f"Unsupported currency method: {method!r}")
+
+        tab = config.tabs[definition.tab]
+        if not tab:
+            raise ValueError(f"Unable to find tab {definition.tab!r}")
+        self._ensure_tab_open(tab)
+        coordinate = tab[definition.coord_field]
+        if coordinate is None:
+            raise ValueError(
+                f"GuiConfig has no {definition.coord_field!r} coordinate "
+                f"for method {method!r}"
+            )
+
+        return coordinate
+
 
 @dataclass(slots=True)
 class Crafter(ABC):
     options: CraftingOptions
     poe: PoeController
-    open_tab: tuple[str, ...] | None
 
     def __init__(
         self, options: CraftingOptions, stopping_token: CancellationToken
@@ -347,6 +364,7 @@ class Crafter(ABC):
         del exception_type, exception_value, exception_traceback
         if self.poe.dragged_currency:
             self.poe.dragged_currency = None
+            self.poe.open_tab = None
             pyautogui.keyUp("shift")
 
     @abstractmethod

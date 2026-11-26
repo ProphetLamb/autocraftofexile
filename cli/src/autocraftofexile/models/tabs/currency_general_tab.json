@@ -7,6 +7,57 @@
   "instructions": "Align the generated mask with the General currency tab. Drag inside to move, drag a handle to resize. Press ENTER to confirm, ESCAPE to cancel.",
   "items": [
     {
+      "name": "general_tab_header",
+      "center": [
+        0.182594,
+        0.044983
+      ],
+      "size": [
+        0.237201,
+        0.073818
+      ],
+      "style": {
+        "fill": "#11181a",
+        "outline": "#e4b780",
+        "stroke": 2,
+        "stipple": "gray50"
+      }
+    },
+    {
+      "name": "atlas_tab_header",
+      "center": [
+        0.474403,
+        0.044983
+      ],
+      "size": [
+        0.237201,
+        0.073818
+      ],
+      "style": {
+        "fill": "#11181a",
+        "outline": "#e4b780",
+        "stroke": 2,
+        "stipple": "gray50"
+      }
+    },
+    {
+      "name": "league_tab_header",
+      "center": [
+        0.763652,
+        0.044983
+      ],
+      "size": [
+        0.237201,
+        0.073818
+      ],
+      "style": {
+        "fill": "#11181a",
+        "outline": "#e4b780",
+        "stroke": 2,
+        "stipple": "gray50"
+      }
+    },
+    {
       "name": "placeholder1",
       "center": [
         0.053754,

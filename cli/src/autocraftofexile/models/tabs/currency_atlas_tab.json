@@ -7,6 +7,57 @@
   "instructions": "Align the generated mask with the Atlas currency tab. Drag inside to move, drag a handle to resize. Press ENTER to confirm, ESCAPE to cancel.",
   "items": [
     {
+      "name": "general_tab_header",
+      "center": [
+        0.194198,
+        0.043771
+      ],
+      "size": [
+        0.267526,
+        0.071829
+      ],
+      "style": {
+        "fill": "#11181a",
+        "outline": "#e4b780",
+        "stroke": 2,
+        "stipple": "gray50"
+      }
+    },
+    {
+      "name": "atlas_tab_header",
+      "center": [
+        0.490733,
+        0.043771
+      ],
+      "size": [
+        0.225624,
+        0.071829
+      ],
+      "style": {
+        "fill": "#11181a",
+        "outline": "#e4b780",
+        "stroke": 2,
+        "stipple": "gray50"
+      }
+    },
+    {
+      "name": "league_tab_header",
+      "center": [
+        0.765512,
+        0.043771
+      ],
+      "size": [
+        0.224013,
+        0.071829
+      ],
+      "style": {
+        "fill": "#11181a",
+        "outline": "#e4b780",
+        "stroke": 2,
+        "stipple": "gray50"
+      }
+    },
+    {
       "name": "wild_lifeforce",
       "center": [
         0.075745,
